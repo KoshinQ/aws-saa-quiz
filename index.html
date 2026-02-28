@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS SAA 問題集</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #06060b;
+    --surface: rgba(255,255,255,0.03);
+    --surface-hover: rgba(255,255,255,0.06);
+    --surface-card: rgba(255,255,255,0.035);
+    --border: rgba(255,255,255,0.06);
+    --border-subtle: rgba(255,255,255,0.04);
+    --text: #ececf1;
+    --text-secondary: #a1a1aa;
+    --text-dim: #52525b;
+    --accent: #818cf8;
+    --correct: #34d399;
+    --wrong: #fb7185;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .bg-mesh {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 60% at 0% 0%, rgba(99,102,241,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 80% at 100% 100%, rgba(139,92,246,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 60% 30%, rgba(52,211,153,0.025) 0%, transparent 50%);
+  }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; }
+
+  .glass {
+    background: var(--surface-card);
+    backdrop-filter: blur(24px) saturate(1.2);
+    -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+  }
+  .glass-subtle {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+  }
+
+  /* 選択肢 */
+  .opt {
+    width: 100%; text-align: left; padding: 18px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text); font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    display: flex; align-items: flex-start; gap: 14px;
+    line-height: 1.65; position: relative; overflow: hidden;
+  }
+  .opt::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(129,140,248,0.06), transparent);
+    opacity: 0; transition: opacity 0.25s ease;
+  }
+  .opt:not(:disabled):hover::before { opacity: 1; }
+  .opt:not(:disabled):hover {
+    border-color: rgba(129,140,248,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .opt:disabled { cursor: default; }
+  .opt .badge {
+    position: relative; z-index: 1;
+    flex-shrink: 0; width: 30px; height: 30px; line-height: 30px;
+    text-align: center; border-radius: 9px; font-size: 0.72rem; font-weight: 700;
+    background: rgba(255,255,255,0.05); color: var(--text-dim);
+    transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .opt > span:last-child { position: relative; z-index: 1; }
+  .opt.is-correct {
+    background: rgba(52,211,153,0.08) !important;
+    border-color: rgba(52,211,153,0.35) !important;
+    box-shadow: 0 0 30px rgba(52,211,153,0.08), inset 0 0 20px rgba(52,211,153,0.03);
+  }
+  .opt.is-correct .badge {
+    background: linear-gradient(135deg, #34d399, #2dd4bf);
+    color: #000; box-shadow: 0 0 12px rgba(52,211,153,0.4);
+  }
+  .opt.is-wrong {
+    background: rgba(251,113,133,0.07) !important;
+    border-color: rgba(251,113,133,0.25) !important;
+  }
+  .opt.is-wrong .badge { background: var(--wrong); color: #000; }
+  .opt.is-dim { opacity: 0.25; }
+
+  .progress-track {
+    width: 100%; height: 2px; background: rgba(255,255,255,0.04);
+    border-radius: 1px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8, #a78bfa);
+    border-radius: 1px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .cat-tag {
+    display: inline-block; padding: 5px 14px;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(129,140,248,0.1), rgba(167,139,250,0.08));
+    color: #a5b4fc; border: 1px solid rgba(129,140,248,0.1);
+  }
+
+  .btn-primary {
+    padding: 15px 44px; border: none; border-radius: 14px;
+    font-size: 0.9rem; font-weight: 700; cursor: pointer; letter-spacing: 0.05em;
+    background: linear-gradient(135deg, #6366f1, #7c3aed);
+    color: white; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 4px 24px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative; overflow: hidden;
+  }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.08));
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    padding: 13px 36px; border: 1px solid var(--border); border-radius: 14px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer; letter-spacing: 0.03em;
+    background: transparent; color: var(--text-secondary); transition: all 0.25s ease;
+  }
+  .btn-ghost:hover { background: var(--surface-hover); border-color: rgba(255,255,255,0.12); color: var(--text); }
+
+  .explanation-panel {
+    background: rgba(129,140,248,0.04);
+    border: 1px solid rgba(129,140,248,0.1);
+    border-radius: 16px; padding: 22px;
+    animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .chart-fill { transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.3s ease-out; }
+  .slide-up { animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1); }
+
+  #fx { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+  #flash-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+    opacity: 0; transition: opacity 0.12s ease;
+  }
+
+  .pop-text {
+    position: fixed; left: 50%; top: 38%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; z-index: 10000;
+    font-weight: 900; letter-spacing: -0.02em;
+    animation: popFloat 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes popFloat {
+    0% { opacity: 0; transform: translate(-50%,-50%) scale(0.5); filter: blur(6px); }
+    20% { opacity: 1; transform: translate(-50%,-50%) scale(1.15); filter: blur(0); }
+    55% { opacity: 1; transform: translate(-50%,-55%) scale(1.0); }
+    100% { opacity: 0; transform: translate(-50%,-72%) scale(0.9); }
+  }
+
+  .combo-text {
+    position: fixed; left: 50%; top: 26%;
+    transform: translate(-50%,-50%);
+    pointer-events: none; z-index: 10000;
+    font-weight: 900; letter-spacing: 0.12em;
+    background: linear-gradient(90deg, #fbbf24, #f97316, #ef4444, #ec4899);
+    background-size: 200% 100%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: comboIn 1.2s cubic-bezier(0.16,1,0.3,1) forwards, comboShimmer 0.6s linear infinite;
+  }
+  @keyframes comboIn {
+    0% { opacity: 0; transform: translate(-50%,-50%) scale(0.3) rotate(-10deg); filter: blur(8px); }
+    18% { opacity: 1; transform: translate(-50%,-50%) scale(1.2) rotate(2deg); filter: blur(0); }
+    45% { opacity: 1; transform: translate(-50%,-50%) scale(1.0) rotate(0deg); }
+    100% { opacity: 0; transform: translate(-50%,-68%) scale(1.0) rotate(0deg); }
+  }
+  @keyframes comboShimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
+
+  /* ===== パチンコ大当たり演出 ===== */
+
+  /* 画面枠レインボーグロー */
+  #border-glow {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9997;
+    border: 4px solid transparent; border-radius: 0;
+    opacity: 0; transition: opacity 0.2s ease;
+  }
+  #border-glow.active {
+    opacity: 1;
+    animation: borderRainbow 0.3s linear infinite, borderPulse 0.15s ease-in-out infinite alternate;
+  }
+  @keyframes borderRainbow {
+    0%   { border-color: #ff0000; box-shadow: inset 0 0 60px rgba(255,0,0,0.15), 0 0 60px rgba(255,0,0,0.15); }
+    16%  { border-color: #ff8800; box-shadow: inset 0 0 60px rgba(255,136,0,0.15), 0 0 60px rgba(255,136,0,0.15); }
+    33%  { border-color: #ffff00; box-shadow: inset 0 0 60px rgba(255,255,0,0.15), 0 0 60px rgba(255,255,0,0.15); }
+    50%  { border-color: #00ff44; box-shadow: inset 0 0 60px rgba(0,255,68,0.15), 0 0 60px rgba(0,255,68,0.15); }
+    66%  { border-color: #0088ff; box-shadow: inset 0 0 60px rgba(0,136,255,0.15), 0 0 60px rgba(0,136,255,0.15); }
+    83%  { border-color: #8800ff; box-shadow: inset 0 0 60px rgba(136,0,255,0.15), 0 0 60px rgba(136,0,255,0.15); }
+    100% { border-color: #ff0088; box-shadow: inset 0 0 60px rgba(255,0,136,0.15), 0 0 60px rgba(255,0,136,0.15); }
+  }
+  @keyframes borderPulse {
+    from { border-width: 3px; }
+    to   { border-width: 6px; }
+  }
+
+  /* 大当たりテキスト */
+  .jackpot-text {
+    position: fixed; left: 50%; top: 42%; z-index: 10001;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+    font-weight: 900; letter-spacing: 0.05em;
+    text-shadow:
+      0 0 20px currentColor,
+      0 0 40px currentColor,
+      0 0 80px currentColor;
+    animation: jackpotIn 1.4s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes jackpotIn {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.2) rotate(-15deg); filter: blur(12px); }
+    12%  { opacity: 1; transform: translate(-50%,-50%) scale(1.5) rotate(3deg); filter: blur(0); }
+    25%  { transform: translate(-50%,-50%) scale(0.9) rotate(-1deg); }
+    35%  { transform: translate(-50%,-50%) scale(1.15) rotate(1deg); }
+    50%  { transform: translate(-50%,-50%) scale(1.0) rotate(0deg); }
+    75%  { opacity: 1; transform: translate(-50%,-50%) scale(1.0); }
+    100% { opacity: 0; transform: translate(-50%,-60%) scale(1.05); }
+  }
+
+  /* ストロボフラッシュ */
+  @keyframes strobeFlash {
+    0%, 100% { opacity: 0; }
+    10% { opacity: 0.25; }
+    20% { opacity: 0; }
+    30% { opacity: 0.2; }
+    40% { opacity: 0; }
+    50% { opacity: 0.15; }
+    60% { opacity: 0; }
+  }
+
+  /* 画面全体の色パルス */
+  #color-pulse {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9996;
+    opacity: 0;
+  }
+
+  /* ===== レインボーポップテキスト ===== */
+  .pop-rainbow {
+    background: linear-gradient(90deg, #ff0040, #ff8800, #ffdd00, #00ff88, #00aaff, #cc00ff, #ff0088, #ff0040);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: popFloat 1s cubic-bezier(0.16,1,0.3,1) forwards, rainbowShimmer 0.3s linear infinite;
+    filter: drop-shadow(0 0 18px rgba(255,255,255,0.7)) drop-shadow(0 0 40px rgba(200,100,255,0.5));
+    font-style: italic;
+  }
+  @keyframes rainbowShimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<canvas id="fx"></canvas>
+<div id="flash-overlay"></div>
+<div id="border-glow"></div>
+<div id="color-pulse"></div>
+
+<!-- ===== スタート画面 ===== -->
+<div id="start-screen" class="screen active" style="align-items:center;justify-content:center;min-height:100vh;">
+  <div style="text-align:center;padding:24px;max-width:440px;width:100%;">
+    <div style="margin-bottom:32px;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.1));border:1px solid rgba(129,140,248,0.15);margin-bottom:20px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <div style="font-size:2.8rem;font-weight:900;letter-spacing:-0.04em;margin-bottom:6px;background:linear-gradient(135deg,#f0f0ff,#c7d2fe,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">AWS SAA</div>
+      <div style="font-size:0.72rem;color:var(--text-dim);font-weight:500;letter-spacing:0.12em;">SOLUTIONS ARCHITECT ASSOCIATE</div>
+    </div>
+
+    <div class="glass" style="padding:28px;margin-bottom:32px;text-align:left;">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-dim);padding-bottom:14px;border-bottom:1px solid var(--border-subtle);">
+        <span>問題数</span><span style="color:var(--text);font-weight:700;">30問</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-dim);padding:14px 0;border-bottom:1px solid var(--border-subtle);">
+        <span>形式</span><span style="color:var(--text);font-weight:700;">4択 / シナリオベース</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-dim);padding:14px 0;border-bottom:1px solid var(--border-subtle);">
+        <span>難易度</span>
+        <span style="font-weight:700;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#fbbf24;margin-right:6px;box-shadow:0 0 6px rgba(251,191,36,0.5);"></span>
+          <span style="color:#fbbf24;">上級</span>
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-dim);padding-top:14px;">
+        <span>カテゴリ</span><span style="color:var(--text);font-weight:700;">7分野</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="startQuiz()">START</button>
+    <div style="margin-top:16px;font-size:0.65rem;color:var(--text-dim);">問題・選択肢は毎回シャッフルされます</div>
+  </div>
+</div>
+
+<!-- ===== 問題画面 ===== -->
+<div id="quiz-screen" class="screen" style="min-height:100vh;padding:24px 16px;flex-direction:column;">
+  <div style="max-width:680px;width:100%;margin:0 auto;">
+    <!-- ヘッダー -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span id="q-num" style="font-size:0.75rem;font-weight:600;color:var(--text-dim);"></span>
+      <div style="display:flex;gap:16px;">
+        <span id="q-streak" style="font-size:0.75rem;font-weight:700;color:var(--text-dim);display:none;"></span>
+        <span id="q-score" style="font-size:0.75rem;font-weight:700;color:var(--accent);"></span>
+      </div>
+    </div>
+    <div class="progress-track" style="margin-bottom:28px;">
+      <div id="progress-fill" class="progress-fill" style="width:0%;"></div>
+    </div>
+
+    <!-- カテゴリ -->
+    <div id="q-cat" class="cat-tag" style="margin-bottom:16px;"></div>
+
+    <!-- 問題文 -->
+    <div class="glass" style="padding:24px;margin-bottom:24px;">
+      <p id="q-text" style="font-size:0.95rem;line-height:1.8;font-weight:500;"></p>
+    </div>
+
+    <!-- 選択肢 -->
+    <div id="opts" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+
+    <!-- 解説 -->
+    <div id="explanation" class="explanation-panel" style="display:none;margin-bottom:24px;">
+      <div style="font-size:0.7rem;font-weight:700;color:#a5b4fc;letter-spacing:0.05em;margin-bottom:8px;">EXPLANATION</div>
+      <p id="explanation-text" style="font-size:0.85rem;line-height:1.8;color:#c4b5fd;"></p>
+    </div>
+
+    <!-- 次へ -->
+    <div id="next-wrap" style="display:none;text-align:center;" class="slide-up">
+      <button class="btn-ghost" onclick="nextQuestion()" id="next-btn">NEXT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 結果画面 ===== -->
+<div id="result-screen" class="screen" style="min-height:100vh;padding:32px 16px;flex-direction:column;">
+  <div style="max-width:680px;width:100%;margin:0 auto;" class="slide-up">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-size:0.7rem;font-weight:600;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:8px;">RESULT</div>
+      <div id="r-score" style="font-size:4rem;font-weight:900;letter-spacing:-0.03em;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></div>
+      <div id="r-rate" style="font-size:1rem;color:var(--text-dim);font-weight:600;margin-bottom:8px;"></div>
+      <div id="r-badge" style="font-size:1.1rem;font-weight:700;"></div>
+    </div>
+
+    <!-- カテゴリ別 -->
+    <div class="glass" style="padding:24px;margin-bottom:20px;">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:16px;">CATEGORY BREAKDOWN</div>
+      <div id="chart" style="display:flex;flex-direction:column;gap:14px;"></div>
+    </div>
+
+    <!-- 不得意 -->
+    <div id="weak-wrap" class="glass" style="padding:24px;margin-bottom:20px;display:none;border-color:rgba(248,113,113,0.2);">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--wrong);letter-spacing:0.08em;margin-bottom:12px;">WEAK CATEGORIES</div>
+      <div id="weak-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- 間違えた問題 -->
+    <div id="wrong-wrap" class="glass" style="padding:24px;margin-bottom:32px;display:none;">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:16px;">WRONG ANSWERS</div>
+      <div id="wrong-list" style="display:flex;flex-direction:column;gap:20px;"></div>
+    </div>
+
+    <div style="text-align:center;padding-bottom:40px;">
+      <button class="btn-primary" onclick="restart()">RETRY</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================
+// 問題データ（上級シナリオベース 30問）
+// ============================
+const questions = [
+  // --- コンピューティング (5) ---
+  {
+    category: "コンピューティング",
+    question: "ある企業がEC2上でステートフルなレガシーアプリケーションを運用しています。月末に3日間だけ大量のバッチ処理が発生しますが、その期間中もユーザー向けのリアルタイム処理を中断させることはできません。コストを最適化しながらバッチ処理のキャパシティを確保する方法として最も適切なものはどれですか？",
+    options: [
+      "Auto ScalingのスケジュールドアクションでEC2インスタンスを月末に増加させ、Savings Plansでバッチ処理分のコミットを追加する",
+      "バッチ処理をAWS Batchに移行し、スポットインスタンスで実行する。ジョブキューにオンデマンドのフォールバックを設定する",
+      "バッチ処理専用のリザーブドインスタンスを年間契約で確保する",
+      "Lambda関数でバッチ処理を並列実行し、同時実行数の上限を引き上げる"
+    ],
+    answer: 1,
+    explanation: "AWS Batchはバッチ処理に最適化されたサービスで、スポットインスタンスを活用してコストを大幅に削減できます。月3日間のみの処理であればリザーブドインスタンスは過剰投資です。Lambdaはステートフルな処理や長時間実行には不向き（最大15分）。スケジュールドアクションは機能しますが、Savings Plansで月3日分のバッチ処理をコミットするのは非効率です。"
+  },
+  {
+    category: "コンピューティング",
+    question: "マイクロサービスアーキテクチャへの移行を進めている企業があります。一部のサービスはリクエスト/レスポンス型で平均応答時間50ms以内が必要、他のサービスはイベント駆動で処理時間が5〜20分のものがあります。運用負荷を最小化しつつ、両方のワークロードに対応する構成はどれですか？",
+    options: [
+      "すべてのサービスをECS on Fargateで実行し、Service Connectで接続する",
+      "リクエスト/レスポンス型はECS on Fargateで実行し、長時間処理はAWS Step FunctionsからECS Taskを起動する",
+      "リクエスト/レスポンス型はLambda、長時間処理はEC2 Auto Scalingで実行する",
+      "すべてのサービスをEKS on EC2で実行し、Horizontal Pod Autoscalerで管理する"
+    ],
+    answer: 1,
+    explanation: "リクエスト/レスポンス型にはFargateのサービス（常時起動で低レイテンシー）、長時間処理にはStep FunctionsからFargateタスクを起動する構成が最適です。Step Functionsがオーケストレーションを担い、Fargateが15分を超える処理も実行可能です。Lambdaは15分制限があり長時間処理に不向き。EKS on EC2は運用負荷が高いです。"
+  },
+  {
+    category: "コンピューティング",
+    question: "EC2のAuto Scalingグループで、スケールアウト時にインスタンスがヘルスチェックに合格する前にALBからトラフィックが送られ、HTTP 502エラーが発生しています。この問題を解決する最も適切な方法はどれですか？",
+    options: [
+      "Auto ScalingグループのヘルスチェックタイプをEC2からELBに変更する",
+      "ALBのターゲットグループにスロースタート期間（Slow Start Duration）を設定する",
+      "Auto Scalingグループのクールダウン期間を延長する",
+      "起動テンプレートのユーザーデータでアプリケーションの起動完了を待つsleepコマンドを追加する"
+    ],
+    answer: 1,
+    explanation: "ALBのスロースタート期間を設定すると、新規登録されたターゲットへのトラフィックを徐々に増加させ、アプリケーションの初期化完了を待つことができます。ヘルスチェックタイプの変更は不健全なインスタンスの検出には有効ですが、初期化中のトラフィック送信の問題は解決しません。クールダウンは次のスケーリングアクションの抑制であり、本質的な解決にはなりません。"
+  },
+  {
+    category: "コンピューティング",
+    question: "グローバル展開するSaaSアプリケーションで、各リージョンのEC2インスタンスに同一のAMIをデプロイする必要があります。AMIは毎週更新されます。最も運用効率の良い方法はどれですか？",
+    options: [
+      "各リージョンで手動でAMIを作成し、Launch Templateを更新する",
+      "EC2 Image Builderでパイプラインを構築し、AMIの作成・テスト・クロスリージョン配布を自動化する",
+      "1つのリージョンでAMIを作成し、AWS CLIスクリプトで他リージョンにコピーする",
+      "各リージョンでDockerイメージとしてECRにプッシュし、ECSで実行する"
+    ],
+    answer: 1,
+    explanation: "EC2 Image Builderは、AMIの作成・バリデーション・クロスリージョン配布を一元管理するパイプラインを構築できます。スケジュール実行により毎週の更新も自動化可能です。CLIスクリプトでも可能ですが、テストの自動化や配布の管理が煩雑になります。コンテナ化は要件がEC2（AMI）であるため適切ではありません。"
+  },
+  {
+    category: "コンピューティング",
+    question: "機械学習の推論ワークロードをEC2で実行しています。GPU インスタンス（p3.2xlarge）を使用していますが、GPU使用率が平均20%で大部分が遊休状態です。コストを最適化しつつ推論レイテンシーを維持する方法はどれですか？",
+    options: [
+      "Amazon Elastic Inferenceアクセラレータを通常のEC2インスタンスにアタッチする",
+      "スポットインスタンスのp3.2xlargeに切り替える",
+      "Amazon SageMaker Inferenceエンドポイントに移行し、Auto Scalingを設定する",
+      "g4dnインスタンス（推論最適化）にダウンサイズし、リザーブドインスタンスで契約する"
+    ],
+    answer: 2,
+    explanation: "SageMaker Inferenceエンドポイントはモデルのデプロイと推論に最適化されており、需要に応じたAuto Scalingで効率的にリソースを利用できます。マルチモデルエンドポイントも利用可能で、GPU使用率の低さの問題を解決できます。Elastic Inferenceは非推奨になりつつあります。単にスポットに切り替えるだけではGPUの遊休問題は解決しません。"
+  },
+  // --- ストレージ (4) ---
+  {
+    category: "ストレージ",
+    question: "医療画像データを扱うアプリケーションで、法規制により7年間のデータ保持が義務付けられています。最初の90日間は頻繁にアクセスされ、90日〜1年はまれにアクセス（数時間以内の取得が必要）、1年以降はほぼアクセスされません（年1回の監査時に12時間以内の取得が必要）。コストを最小化するS3の設定はどれですか？",
+    options: [
+      "S3 Standard → 90日後にS3 Standard-IA → 1年後にS3 Glacier Flexible Retrieval → 7年後に削除のライフサイクルポリシー",
+      "S3 Intelligent-Tieringで全期間管理し、7年後に削除のライフサイクルポリシーを設定",
+      "S3 Standard → 90日後にS3 One Zone-IA → 1年後にS3 Glacier Deep Archive → 7年後に削除",
+      "S3 Standard → 90日後にS3 Glacier Instant Retrieval → 1年後にS3 Glacier Deep Archive → 7年後に削除"
+    ],
+    answer: 0,
+    explanation: "90日〜1年は「まれにアクセス・数時間以内の取得」なのでS3 Standard-IAが適切です。1年以降は「年1回・12時間以内」なのでGlacier Flexible Retrieval（標準取得3-5時間）が要件を満たしつつ低コストです。One Zone-IAは医療データの可用性要件に不適切。Glacier Instant Retrievalは頻繁なアクセスに最適化されておりこの期間では過剰です。Deep Archiveは標準取得12時間ですが、監査の12時間以内の要件にギリギリで確実性に欠けます。"
+  },
+  {
+    category: "ストレージ",
+    question: "金融機関が規制対応のためS3に保存された取引記録を改ざん不可にする必要があります。書き込み後は一切の変更・削除を許可せず、保持期間は5年間です。さらに、管理者であってもこの設定を変更できないようにする構成はどれですか？",
+    options: [
+      "S3バージョニングを有効にし、バケットポリシーでDeleteObject/PutObjectを拒否する",
+      "S3 Object Lockのコンプライアンスモードで保持期間5年を設定する",
+      "S3 Object Lockのガバナンスモードで保持期間5年を設定し、MFA Deleteを有効にする",
+      "AWS Backupでバックアップボールトロックを設定し、S3データをバックアップする"
+    ],
+    answer: 1,
+    explanation: "S3 Object Lockのコンプライアンスモードでは、ルートユーザーを含む誰も保持期間中にオブジェクトの削除や上書きができません。ガバナンスモードは特定の権限を持つユーザーが設定を変更可能なため、「管理者でも変更不可」の要件を満たしません。バケットポリシーは管理者が変更可能です。"
+  },
+  {
+    category: "ストレージ",
+    question: "オンプレミスのNFSファイルサーバー（100TB）をAWSに移行する必要があります。移行中もオンプレミスからのアクセスを継続し、移行完了後はEFS上のデータにEC2から直接アクセスします。ネットワーク帯域は1Gbpsです。最も効率的な移行方法はどれですか？",
+    options: [
+      "AWS DataSyncでオンプレミスからEFSに直接転送する。移行中はDataSyncエージェントがキャッシュを提供する",
+      "AWS Storage GatewayのFile Gatewayをオンプレミスに設置し、S3に同期後、DataSyncでS3からEFSにコピーする",
+      "AWS Snowball Edgeでデータを物理転送し、S3にインポート後、DataSyncでEFSにコピーする",
+      "AWS DataSyncでオンプレミスNFSからEFSに直接転送し、移行中はAWS Storage Gatewayでオンプレミスにキャッシュアクセスを提供する"
+    ],
+    answer: 3,
+    explanation: "DataSyncはNFSからEFSへの直接転送をサポートし、最も効率的なパスです。移行中のオンプレミスからのアクセス継続にはStorage Gateway（File Gateway）が適切で、S3/EFSへの透過的なアクセスを提供します。DataSyncエージェント自体にはキャッシュ機能はありません。Snowball Edgeは1Gbpsの帯域があれば不要（100TBは約10日で転送可能）です。"
+  },
+  {
+    category: "ストレージ",
+    question: "S3バケット間のクロスリージョンレプリケーション（CRR）を設定していますが、レプリケーション先バケットのコストを削減したいと考えています。ソースバケットはS3 Standardで、レプリケーション先のデータは主にディザスタリカバリ用途で通常はアクセスされません。最適な構成はどれですか？",
+    options: [
+      "レプリケーション先バケットにS3 Glacier Flexible Retrievalのライフサイクルポリシーを即座に適用する",
+      "レプリケーションルールでレプリカのストレージクラスをS3 One Zone-IAに指定する",
+      "レプリケーションルールでレプリカのストレージクラスをS3 Standard-IAに指定する",
+      "レプリケーション先バケットにS3 Intelligent-Tieringを設定する"
+    ],
+    answer: 2,
+    explanation: "CRRのレプリケーションルール内でレプリカのストレージクラスを直接指定できます。DR用途で通常アクセスされないデータにはS3 Standard-IAが最適です。One Zone-IAはDR用途として不適切（単一AZ障害でデータ喪失のリスク）。Glacier即時適用はレプリケーション直後の取得が困難になります。Intelligent-Tieringは監視料金が発生し、アクセスパターンが明確な場合は不要です。"
+  },
+  // --- データベース (5) ---
+  {
+    category: "データベース",
+    question: "Eコマースサイトで、商品カタログの読み取りが書き込みの100倍以上あり、セール時にはリードレプリカへの接続数が急増します。Aurora MySQL互換を使用していますが、リードレプリカのスケーリングが間に合わず読み取りが遅延しています。最も効果的な解決策はどれですか？",
+    options: [
+      "Aurora Auto Scalingでリードレプリカ数を最大15まで自動的にスケールする",
+      "商品カタログの読み取りにAmazon ElastiCache for Redisを導入し、キャッシュヒット率を最大化する",
+      "Aurora Serverless v2に移行し、ACUの自動スケーリングに任せる",
+      "Aurora Global Databaseを設定し、他リージョンのセカンダリクラスターに読み取りを分散する"
+    ],
+    answer: 1,
+    explanation: "商品カタログは比較的静的なデータで、読み取りが書き込みの100倍以上あるパターンではElastiCacheによるキャッシュが最も効果的です。キャッシュヒット率が高ければデータベースへの読み取り負荷を劇的に削減でき、レイテンシーもマイクロ秒レベルに改善されます。リードレプリカの追加は線形にしかスケールせず、根本的な解決にはなりません。"
+  },
+  {
+    category: "データベース",
+    question: "DynamoDBテーブルでホットパーティション問題が発生しています。特定の日付（当日の日付）をパーティションキーとして使用しており、書き込みが集中します。テーブル設計を変更して問題を解決する方法として最も適切なものはどれですか？",
+    options: [
+      "DynamoDBのアダプティブキャパシティに任せ、プロビジョンドキャパシティを増加する",
+      "パーティションキーに日付+ランダムサフィックス（例：2024-01-15_03）を付与してシャードし、読み取り時に全シャードをクエリして結合する",
+      "日付をソートキーに移動し、固定値のパーティションキーを使用する",
+      "DynamoDB Accelerator（DAX）を導入してキャッシュで負荷を軽減する"
+    ],
+    answer: 1,
+    explanation: "Write Shardingパターンとして、パーティションキーにランダムサフィックスを追加することで書き込みを複数のパーティションに分散できます。読み取り時は全シャードに対してクエリして結果を結合します。固定パーティションキーはさらに問題を悪化させます。DAXは読み取りキャッシュのみで書き込みの集中は解決しません。アダプティブキャパシティは一時的な緩和策であり、根本的な設計問題は解決しません。"
+  },
+  {
+    category: "データベース",
+    question: "Aurora PostgreSQL互換を使用するアプリケーションで、夜間に大量のETLジョブがリードレプリカに対して実行されます。ETLジョブの長時間クエリがリーダーエンドポイント経由のOLTP読み取りに影響を与えています。ETLとOLTPを分離する最も適切な方法はどれですか？",
+    options: [
+      "ETL専用のリードレプリカを追加し、そのインスタンスのエンドポイントに直接接続する。リーダーエンドポイントのカスタムエンドポイントからETL用レプリカを除外する",
+      "ETLジョブをAmazon Redshiftに移行し、Aurora PostgreSQLからRedshiftへのゼロETL統合を使用する",
+      "ETL実行時にOLTPのリードレプリカを別のインスタンスクラスにスケールアップする",
+      "ETLクエリのワークグループにリソース制限を設定してOLTPへの影響を抑える"
+    ],
+    answer: 0,
+    explanation: "Auroraのカスタムエンドポイントを使用し、ETL用レプリカをOLTP用のリーダーエンドポイントから除外することで、ワークロードを完全に分離できます。ゼロETL統合は有効ですが大規模な移行を伴います。スケールアップは根本解決にならず、ワークグループのリソース制限はAurora PostgreSQLではRDS Proxyの機能に依存し、完全な分離は困難です。"
+  },
+  {
+    category: "データベース",
+    question: "グローバルに展開するアプリケーションで、ユーザーは最寄りのリージョンからデータの読み書きを行います。書き込みの競合は許容できず、強い整合性が必要です。単一リージョンの障害時にも5分以内のRTO/RPOが必要です。最も適切なデータベースソリューションはどれですか？",
+    options: [
+      "DynamoDB Global Tablesを使用し、各リージョンでの読み書きを可能にする",
+      "Aurora Global Databaseを使用し、プライマリリージョンで書き込み、セカンダリでの読み取りを行う。障害時はセカンダリをプロモートする",
+      "各リージョンに独立したRDSインスタンスを配置し、AWS Database Migration Serviceで同期する",
+      "Amazon Keyspacesをグローバルテーブルで使用する"
+    ],
+    answer: 1,
+    explanation: "Aurora Global Databaseはプライマリリージョンで書き込みの強い整合性を保証し、セカンダリリージョンへのレプリケーションラグは通常1秒未満です。障害時はセカンダリを1分以内にプロモートできRTO/RPO要件を満たします。DynamoDB Global Tablesはマルチマスターですが結果整合性であり、書き込みの競合が発生します。"
+  },
+  {
+    category: "データベース",
+    question: "RDS for MySQLのマルチAZインスタンスでストレージが80%に達し、自動スケーリングが有効ですが、現在のgp2ボリュームタイプではIOPSがボトルネックになっています。ストレージ容量のスケーリングとIOPS性能の向上を同時に解決する方法はどれですか？",
+    options: [
+      "RDSインスタンスのストレージタイプをgp2からgp3に変更し、プロビジョンドIOPSを設定する",
+      "リードレプリカを追加して読み取りIOPSを分散する",
+      "RDSインスタンスのストレージタイプをio1に変更し、必要なIOPSをプロビジョンする",
+      "Aurora MySQLに移行してストレージの自動スケーリングとIOPS性能を向上させる"
+    ],
+    answer: 0,
+    explanation: "gp3はgp2と比較してベースラインIOPSが3000で一定（gp2はボリュームサイズに依存）であり、追加のプロビジョンドIOPSも独立して設定可能です。gp2→gp3への変更はオンラインで実行可能でダウンタイム不要です。io1はgp3より高コストで、この要件ではgp3で十分対応できます。Aurora移行は有効ですが大規模な変更を伴います。"
+  },
+  // --- ネットワーク (4) ---
+  {
+    category: "ネットワーク",
+    question: "10個のVPCを相互接続し、オンプレミスとの接続も必要です。VPC間のトラフィックを特定のルーティングポリシーで制御し、一部のVPC間の通信を禁止したいです。VPCの追加が今後も予定されています。最も適切なネットワーク構成はどれですか？",
+    options: [
+      "フルメッシュのVPCピアリングを設定し、セキュリティグループで通信を制御する",
+      "AWS Transit Gatewayを使用し、ルートテーブルを分割して通信ポリシーを制御する",
+      "AWS PrivateLinkで各VPC間のサービスエンドポイントを作成する",
+      "AWS Cloud WANを使用してグローバルネットワークを構成する"
+    ],
+    answer: 1,
+    explanation: "Transit Gatewayは複数VPCとオンプレミスの接続をハブ&スポーク型で一元管理でき、ルートテーブルのアソシエーションとプロパゲーションで通信ポリシーを柔軟に制御できます。フルメッシュのVPCピアリングは10個のVPCで45本の接続が必要で管理困難です。PrivateLinkはサービス間の接続用でVPC間の汎用的な通信には不向きです。Cloud WANはグローバル規模で有効ですが、単一リージョン内ではTGWで十分です。"
+  },
+  {
+    category: "ネットワーク",
+    question: "プライベートサブネットのEC2インスタンスからS3とDynamoDBにアクセスする必要があります。セキュリティ要件として、これらのAWSサービスへのトラフィックがインターネットを経由しないことが必須です。NATゲートウェイのコストも削減したいです。最適な構成はどれですか？",
+    options: [
+      "S3用のゲートウェイVPCエンドポイントとDynamoDB用のゲートウェイVPCエンドポイントを作成する",
+      "S3とDynamoDB用のインターフェースVPCエンドポイントを作成する",
+      "S3用のゲートウェイVPCエンドポイントを作成し、DynamoDB用にNATゲートウェイを使用する",
+      "AWS PrivateLinkを使用してS3とDynamoDBに接続する"
+    ],
+    answer: 0,
+    explanation: "S3とDynamoDBはゲートウェイVPCエンドポイントに対応しており、追加料金なしでVPC内からのプライベートアクセスが可能です。トラフィックはAWSネットワーク内を経由するためインターネットを通りません。インターフェースVPCエンドポイント（PrivateLink）は時間課金+データ処理課金が発生するため、ゲートウェイ型が使える場合はそちらが最適です。"
+  },
+  {
+    category: "ネットワーク",
+    question: "グローバルに展開するTCPベースのゲームサーバーで、世界中のプレイヤーに対して最小レイテンシーを提供する必要があります。サーバーは複数リージョンのNLBの背後で動作しています。プレイヤーの接続先リージョンの自動最適化とフェイルオーバーを実現するサービスはどれですか？",
+    options: [
+      "Amazon CloudFrontを使用する",
+      "Route 53のレイテンシーベースルーティングを使用する",
+      "AWS Global Acceleratorを使用する",
+      "Route 53のジオロケーションルーティングを使用する"
+    ],
+    answer: 2,
+    explanation: "Global AcceleratorはTCPトラフィックに対してAWSのグローバルネットワークを経由した最適パスを提供し、エニーキャストIPで最寄りのエッジロケーションにルーティングします。NLBとの統合によりヘルスチェックベースのフェイルオーバーも自動化されます。CloudFrontはHTTP/HTTPSが主でTCPゲームサーバーには不向き。Route 53のレイテンシールーティングはDNSレベルのため切り替え遅延があります。"
+  },
+  {
+    category: "ネットワーク",
+    question: "企業がAWS Direct Connectを使用してオンプレミスとVPCを接続しています。Direct Connect回線の障害に備えた冗長構成が必要ですが、2本目のDirect Connect専用線のコストは予算を超えています。最もコスト効率の良い冗長化方法はどれですか？",
+    options: [
+      "同じロケーションに2本目のDirect Connect接続を追加する",
+      "AWS Site-to-Site VPNをバックアップとして設定し、BGPの優先度でDirect Connectをプライマリにする",
+      "異なるロケーションに2本目のDirect Connect接続を追加する",
+      "AWS Transit Gatewayを追加し、VPN接続を複数のAZに分散する"
+    ],
+    answer: 1,
+    explanation: "Site-to-Site VPNはDirect Connectのバックアップとして最もコスト効率が良い選択肢です。BGPルーティングの優先度設定により、通常時はDirect Connectを使用し、障害時に自動的にVPNにフェイルオーバーします。2本目のDirect Connectは高可用性ですが高コストです。"
+  },
+  // --- セキュリティ (5) ---
+  {
+    category: "セキュリティ",
+    question: "マルチアカウント環境で、開発者がEC2インスタンスにSSH接続する必要があります。セキュリティチームはSSHキーの管理を排除し、すべてのセッションを記録したいと考えています。インスタンスはプライベートサブネットにあり、インターネットからのインバウンドアクセスは一切許可しません。最適なソリューションはどれですか？",
+    options: [
+      "AWS Systems Manager Session Managerを使用し、IAMポリシーでアクセスを制御する。セッションログをCloudWatch LogsとS3に記録する",
+      "踏み台ホスト（Bastion Host）をパブリックサブネットに配置し、SSHキーをAWS Secrets Managerで管理する",
+      "EC2 Instance Connectを使用し、一時的なSSH公開鍵をプッシュする",
+      "AWS Client VPNを設定し、VPN経由でプライベートインスタンスにSSH接続する"
+    ],
+    answer: 0,
+    explanation: "Session ManagerはSSHキー不要でインバウンドポートの開放も不要です。IAMポリシーでアクセスを細かく制御でき、すべてのセッションのコマンドログをCloudWatch LogsとS3に記録できます。踏み台ホストはSSHキー管理が残り、パブリックサブネットへのインバウンド許可が必要です。EC2 Instance Connectもポート22のインバウンドが必要です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "S3バケットにアップロードされた機密文書を自動的に分類し、個人情報（PII）が含まれるファイルを検出してタグ付けしたいです。検出結果はSecurity Hubに統合する必要があります。最適なサービスはどれですか？",
+    options: [
+      "Amazon Comprehendで感情分析とエンティティ認識を行い、Lambda経由でタグ付けする",
+      "Amazon Macieを有効化し、機密データの自動検出を設定する",
+      "AWS Config Rulesでカスタムルールを作成し、S3オブジェクトの内容をスキャンする",
+      "Amazon GuardDutyのS3保護機能を有効化する"
+    ],
+    answer: 1,
+    explanation: "Amazon MacieはS3に特化した機密データ検出サービスで、PIIやクレジットカード番号などの機密データを機械学習で自動検出し、Security Hubに統合できます。ComprehendはNLP汎用サービスでPII検出に特化していません。GuardDutyは脅威検出サービスでデータ分類は行いません。Config Rulesはリソース設定の監査用で、オブジェクト内容のスキャンはできません。"
+  },
+  {
+    category: "セキュリティ",
+    question: "アプリケーションがRDSデータベースに接続する際の認証情報管理について、認証情報の自動ローテーション、暗号化保存、アプリケーションからの安全な取得を実現する構成はどれですか？",
+    options: [
+      "AWS Systems Manager Parameter Store（SecureString）に認証情報を保存し、CloudWatch Eventsで定期的にLambdaを実行してローテーションする",
+      "AWS Secrets Managerに認証情報を保存し、RDS用の自動ローテーションを有効化する",
+      "IAMデータベース認証を使用し、認証情報の保存自体を不要にする",
+      "Amazon CognitoのユーザープールでDB接続用のトークンを発行する"
+    ],
+    answer: 1,
+    explanation: "Secrets ManagerはRDSの認証情報に対してネイティブの自動ローテーション機能を提供します。KMS暗号化、バージョン管理、SDKからの安全な取得を一括で実現できます。Parameter Store (SecureString) も暗号化保存は可能ですがネイティブのローテーション機能はなく、Lambdaでの自前実装が必要です。IAM DB認証は有効ですが全てのRDSエンジンで利用できるわけではなく、接続数の制限もあります。"
+  },
+  {
+    category: "セキュリティ",
+    question: "CloudFrontで配信しているWebアプリケーションに対して、特定の国からのアクセスをブロックし、レートベースのルールでDDoSを緩和し、SQLインジェクションを防御する必要があります。これらの要件をすべて満たす構成はどれですか？",
+    options: [
+      "CloudFrontの地理的制限で国をブロックし、AWS ShieldAdvancedでDDoS保護、AWS WAFでSQLインジェクション防御を設定する",
+      "AWS WAFをCloudFrontに関連付け、Geo Matchルールで国をブロック、レートベースルールでDDoS緩和、SQLiルールセットでSQLインジェクション防御を設定する",
+      "CloudFrontの地理的制限、AWS Shield Standard、AWS WAFのSQLiルールを組み合わせる",
+      "Route 53のジオロケーションルーティングで国をブロックし、NACLでレート制限、WAFでSQLi防御する"
+    ],
+    answer: 1,
+    explanation: "AWS WAF単体でGeo Matchルール（国ブロック）、レートベースルール（DDoS緩和）、マネージドルールセット（SQLi防御）のすべてを実現でき、CloudFrontに直接関連付けできます。Shield Advancedは追加のDDoS保護ですが月額$3000と高コストで、レートベースのDDoS緩和はWAFで対応可能です。CloudFrontの地理的制限はWAFのGeo Match条件と組み合わせるのが一般的ですが、すべてをWAFで統一管理する方がシンプルです。"
+  },
+  {
+    category: "セキュリティ",
+    question: "Lambda関数がVPC内のRDSにアクセスする構成で、関数のコールドスタート時にデータベース接続が集中し、RDSの接続数上限に達する問題が発生しています。Lambda関数のスケーリングを制限せずにこの問題を解決する方法はどれですか？",
+    options: [
+      "Lambda関数のリザーブド同時実行数を制限する",
+      "RDS Proxyを導入して接続プーリングを行う",
+      "RDSインスタンスをスケールアップしてmax_connectionsを増加させる",
+      "Lambda関数の初期化フェーズで接続を確立し、グローバル変数でキャッシュする"
+    ],
+    answer: 1,
+    explanation: "RDS Proxyはデータベースへの接続をプーリングし、多数のLambdaインスタンスからの接続を少数のDB接続に集約します。Lambdaのスケーリングを制限せず、RDSへの接続数を管理できます。リザーブド同時実行数の制限はLambdaのスケーリング自体を制限するため要件に反します。接続のキャッシュはウォームスタート時のみ有効で、コールドスタート時の接続集中問題は解決しません。"
+  },
+  // --- 高可用性・耐障害性 (4) ---
+  {
+    category: "高可用性・耐障害性",
+    question: "RPO 1時間、RTO 4時間の災害復旧要件を持つアプリケーションがあります。プライマリリージョンにはEC2のAuto Scalingグループ、Aurora、S3で構成されています。最もコスト効率の良いDR戦略はどれですか？",
+    options: [
+      "マルチサイト（Active-Active）: セカンダリリージョンに同一構成をフルデプロイする",
+      "ウォームスタンバイ: セカンダリリージョンに最小構成で稼働させ、障害時にスケールアップする",
+      "パイロットライト: セカンダリリージョンでAurora Global Databaseのみ稼働させ、EC2はAMIとLaunch Templateを準備。S3はCRRで同期",
+      "バックアップ&リストア: 定期的にAuroraスナップショットとAMIをセカンダリリージョンにコピーする"
+    ],
+    answer: 2,
+    explanation: "RPO 1時間・RTO 4時間は「パイロットライト」戦略で達成可能です。Aurora Global Databaseはリアルタイムでレプリケーションされ（RPO秒単位）、EC2のAMIとLaunch Templateを準備しておけば4時間以内にデプロイ可能です。ウォームスタンバイやActive-Activeは過剰コストです。バックアップ&リストアではRPOとRTO要件の達成が不確実です。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "SQSキューを使用した非同期処理システムで、メッセージの処理に平均5分かかります。処理が失敗した場合は最大3回リトライし、それでも失敗した場合は調査用に保存する必要があります。処理中のメッセージが他のコンシューマーに二重配信されないようにする構成はどれですか？",
+    options: [
+      "標準キューでVisibility Timeoutを15分に設定し、最大受信数3のデッドレターキューを設定する",
+      "FIFOキューでVisibility Timeoutを15分に設定し、最大受信数3のデッドレターキューを設定する",
+      "標準キューでVisibility Timeoutを6分に設定し、最大受信数4のデッドレターキューを設定する",
+      "FIFOキューでVisibility Timeoutを6分に設定し、最大受信数4のデッドレターキューを設定する"
+    ],
+    answer: 2,
+    explanation: "Visibility Timeoutは処理時間より長く設定する必要がありますが、過度に長いと失敗時のリトライが遅れます。6分（処理5分+マージン1分）が適切です。DLQの最大受信数はリドライブポリシーのmaxReceiveCountで、初回受信+3回リトライ=4に設定します。「最大3回リトライ」は初回を含まないため4が正解です。FIFOキューは順序保証が不要な場合にスループット制限が問題になります。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "3層Webアプリケーション（ALB → EC2 → Aurora）で、EC2レイヤーのデプロイ時にダウンタイムをゼロにする必要があります。デプロイ中に新旧バージョンが混在するとデータの不整合が発生する可能性があります。最適なデプロイ戦略はどれですか？",
+    options: [
+      "ローリングデプロイで1台ずつ更新する",
+      "Blue/Greenデプロイで新環境を構築し、ALBのリスナールールを一括で切り替える",
+      "カナリアデプロイで10%のトラフィックを新バージョンに向ける",
+      "インプレースデプロイでAuto ScalingグループのLaunch Templateを更新し、インスタンスリフレッシュを実行する"
+    ],
+    answer: 1,
+    explanation: "新旧バージョンの混在を避ける必要がある場合、Blue/Greenデプロイが最適です。新環境（Green）を完全に構築・テストした後、ALBのリスナールールまたはターゲットグループの切り替えで一括移行します。ローリングやカナリアデプロイは過渡期に新旧が混在するため、データ不整合の要件に反します。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "EventBridgeルールでLambda関数をトリガーし、処理結果をDynamoDBに書き込むワークフローがあります。Lambda関数がDynamoDBへの書き込みに失敗した場合、イベントが失われないようにする最も信頼性の高い構成はどれですか？",
+    options: [
+      "Lambda関数内でtry/catchで例外をキャッチし、失敗時にSQSキューにイベントを送信する",
+      "Lambda関数のデッドレターキュー（DLQ）にSQSを設定し、EventBridgeのリトライポリシーとDLQも設定する",
+      "Lambda関数でDynamoDBへの書き込みをリトライロジック（指数バックオフ）で実装する",
+      "EventBridgeのターゲットをSQSキューに変更し、SQS→Lambdaの構成にする"
+    ],
+    answer: 1,
+    explanation: "多層防御として、EventBridgeのリトライポリシー（最大185回/24時間）とDLQ、Lambda関数自体のDLQ（非同期呼び出しの最大2回リトライ後のフォールバック）を両方設定することで、イベントの喪失を最小化できます。アプリケーションレベルのリトライだけでは、Lambda自体のタイムアウトやOOM等では対処できません。SQSを中間に挟む方法も有効ですが、既存構成への変更が大きくなります。"
+  },
+  // --- コスト最適化 (3) ---
+  {
+    category: "コスト最適化",
+    question: "開発環境のAWSアカウントで、開発者がEC2インスタンスを起動したまま退勤し、夜間・休日にアイドル状態のインスタンスが月額コストの40%を占めています。自動的にコストを削減する最も効果的な方法はどれですか？",
+    options: [
+      "AWS Instance Schedulerソリューションを導入し、営業時間外にインスタンスを自動停止・開始する",
+      "すべてのインスタンスをスポットインスタンスに変更する",
+      "AWS Budgetsで予算アラートを設定し、開発者に通知する",
+      "すべてのインスタンスにAuto Scalingグループを設定し、夜間のDesired Capacityを0にする"
+    ],
+    answer: 0,
+    explanation: "AWS Instance Schedulerはタグベースでインスタンスの起動・停止スケジュールを管理するソリューションで、開発環境の夜間・休日停止に最適です。スポットインスタンスは中断リスクがあり開発中の作業が失われる可能性があります。Budgetsアラートは通知のみで自動停止しません。Auto Scalingで0にすると、ステートフルなインスタンスのデータが失われます。"
+  },
+  {
+    category: "コスト最適化",
+    question: "NATゲートウェイ経由のデータ処理料金が月額で想定を大幅に超えています。VPC Flow Logsを確認すると、EC2インスタンスからS3へのデータ転送が大部分を占めています。最もコスト効率良くこの問題を解決する方法はどれですか？",
+    options: [
+      "NATゲートウェイをNATインスタンスに置き換えてデータ処理料金を削減する",
+      "S3用のゲートウェイVPCエンドポイントを作成し、ルートテーブルを更新する",
+      "EC2インスタンスをパブリックサブネットに移動してNATゲートウェイを不要にする",
+      "S3 Transfer Accelerationを有効にしてデータ転送を最適化する"
+    ],
+    answer: 1,
+    explanation: "S3のゲートウェイVPCエンドポイントは無料で、S3へのトラフィックがNATゲートウェイを経由しなくなります。NATゲートウェイのデータ処理料金（$0.045/GB）が完全に削減されます。NATインスタンスは管理負荷が増え、パブリックサブネットへの移動はセキュリティリスクです。Transfer Accelerationはコスト削減ではなく高速化のための機能です。"
+  },
+  {
+    category: "コスト最適化",
+    question: "マルチアカウント環境で、各アカウントのリザーブドインスタンスの利用率を最大化したいと考えています。アカウントAで購入したRIの未使用分をアカウントBで活用する方法はどれですか？",
+    options: [
+      "各アカウントでリザーブドインスタンスを個別に購入し、AWS Budgetsで利用率を監視する",
+      "AWS Organizationsの一括請求（Consolidated Billing）を有効にし、RI共有を利用する",
+      "RIマーケットプレイスで未使用のRIを売却し、アカウントBで購入する",
+      "AWS License Managerでリザーブドインスタンスのライセンスをアカウント間で共有する"
+    ],
+    answer: 1,
+    explanation: "AWS Organizationsの一括請求を使用すると、組織内のアカウント間でリザーブドインスタンスの割引が自動的に共有されます。アカウントAのRIが未使用の場合、同じインスタンスタイプを使用するアカウントBに自動適用されます。RIマーケットプレイスは外部への売買用で、組織内共有には不適切です。"
+  }
+];
+
+// ============================
+// 状態管理
+// ============================
+let idx = 0, score = 0, streak = 0, maxStreak = 0;
+let shuffled = [], results = [];
+
+// ============================
+// エフェクトエンジン
+// ============================
+const cvs = document.getElementById('fx');
+const c = cvs.getContext('2d');
+let particles = [], rings = [], speedLines = [], animId = null;
+
+function resize() { cvs.width = innerWidth; cvs.height = innerHeight; }
+addEventListener('resize', resize); resize();
+
+// --- パーティクル ---
+class Particle {
+  constructor(x, y, opts = {}) {
+    this.x = x; this.y = y;
+    this.vx = opts.vx ?? (Math.random()-0.5)*8;
+    this.vy = opts.vy ?? -(2+Math.random()*6);
+    this.size = opts.size ?? 2+Math.random()*3;
+    this.color = opts.color ?? `hsl(${Math.random()*360},80%,70%)`;
+    this.life = 1;
+    this.decay = opts.decay ?? 0.013+Math.random()*0.009;
+    this.gravity = opts.gravity ?? 0.1;
+    this.rotation = Math.random()*Math.PI*2;
+    this.rotSpeed = (Math.random()-0.5)*0.2;
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    this.vy += this.gravity; this.life -= this.decay;
+    this.rotation += this.rotSpeed;
+  }
+  draw(ctx) {
+    if (this.life <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = this.life * this.life; // quadratic fade
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 6;
+    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+    ctx.restore();
+  }
+}
+
+// --- 衝撃波リング ---
+class Ring {
+  constructor(x, y, opts = {}) {
+    this.x = x; this.y = y;
+    this.radius = 0;
+    this.maxRadius = opts.maxRadius ?? Math.max(cvs.width, cvs.height) * 0.5;
+    this.speed = opts.speed ?? 10;
+    this.color = opts.color ?? '#34d399';
+    this.lineWidth = opts.lineWidth ?? 3;
+    this.life = 1;
+  }
+  update() {
+    this.radius += this.speed;
+    this.life = Math.max(0, 1 - this.radius / this.maxRadius);
+  }
+  draw(ctx) {
+    if (this.life <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = this.life * 0.6;
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.lineWidth * this.life + 1;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 25;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  get done() { return this.life <= 0; }
+}
+
+// --- 集中線（スピードライン） ---
+class SpeedLine {
+  constructor(opts = {}) {
+    this.cx = opts.cx ?? cvs.width / 2;
+    this.cy = opts.cy ?? cvs.height * 0.4;
+    this.angle = Math.random() * Math.PI * 2;
+    this.innerR = 40 + Math.random() * 60;
+    this.length = 0;
+    this.maxLength = 200 + Math.random() * 400;
+    this.speed = 18 + Math.random() * 18;
+    this.color = opts.color ?? '#fff';
+    this.width = 1 + Math.random() * 2.5;
+    this.life = 1;
+    this.growing = true;
+  }
+  update() {
+    if (this.growing) {
+      this.length += this.speed;
+      if (this.length >= this.maxLength) this.growing = false;
+    } else {
+      this.life -= 0.05;
+    }
+  }
+  draw(ctx) {
+    if (this.life <= 0) return;
+    const x0 = this.cx + Math.cos(this.angle) * this.innerR;
+    const y0 = this.cy + Math.sin(this.angle) * this.innerR;
+    const x1 = this.cx + Math.cos(this.angle) * (this.innerR + this.length);
+    const y1 = this.cy + Math.sin(this.angle) * (this.innerR + this.length);
+    ctx.save();
+    ctx.globalAlpha = this.life * 0.5;
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.width;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    ctx.restore();
+  }
+  get done() { return this.life <= 0; }
+}
+
+function spawnBurst(x, y, count, opts = {}) {
+  const colors = ['#818cf8','#a78bfa','#34d399','#60a5fa','#f472b6','#fbbf24','#2dd4bf'];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI*2/count)*i + (Math.random()-0.5)*0.5;
+    const speed = 3 + Math.random()*6;
+    particles.push(new Particle(x, y, {
+      vx: Math.cos(angle)*speed*(opts.spread??1),
+      vy: Math.sin(angle)*speed*(opts.spread??1) - 2,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      size: 2+Math.random()*4,
+      decay: 0.012+Math.random()*0.008,
+      gravity: 0.08,
+    }));
+  }
+  if (!animId) tick();
+}
+
+function spawnRain(count) {
+  const colors = ['#818cf8','#a78bfa','#34d399','#60a5fa','#f472b6','#fbbf24'];
+  for (let i = 0; i < count; i++) {
+    particles.push(new Particle(
+      Math.random()*cvs.width, -20 - Math.random()*300,
+      { vx: (Math.random()-0.5)*3, vy: 2+Math.random()*4,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        size: 2+Math.random()*3, decay: 0.006+Math.random()*0.006, gravity: 0.06 }
+    ));
+  }
+  if (!animId) tick();
+}
+
+function spawnRings(count, opts = {}) {
+  const cx = opts.cx ?? cvs.width / 2;
+  const cy = opts.cy ?? cvs.height * 0.4;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      rings.push(new Ring(cx, cy, {
+        color: opts.color ?? '#34d399',
+        speed: opts.speed ?? 10,
+        lineWidth: opts.lineWidth ?? 3,
+        maxRadius: opts.maxRadius,
+      }));
+      if (!animId) tick();
+    }, i * (opts.delay ?? 150));
+  }
+}
+
+function spawnSpeedLines(count, opts = {}) {
+  for (let i = 0; i < count; i++) {
+    speedLines.push(new SpeedLine({
+      color: opts.color ?? '#fff',
+      cx: opts.cx, cy: opts.cy,
+    }));
+  }
+  if (!animId) tick();
+}
+
+function spawnFountain(count) {
+  const cx = cvs.width / 2;
+  const bottom = cvs.height + 20;
+  const colors = ['#fbbf24','#ff0040','#00ff88','#00aaff','#ff00ff','#ff8800','#fff'];
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      particles.push(new Particle(
+        cx + (Math.random()-0.5)*200, bottom,
+        { vx: (Math.random()-0.5)*8, vy: -(10+Math.random()*12),
+          color: colors[Math.floor(Math.random()*colors.length)],
+          size: 3+Math.random()*4, decay: 0.005+Math.random()*0.005, gravity: 0.1 }
+      ));
+      if (!animId) tick();
+    }, i * 10);
+  }
+}
+
+function tick() {
+  c.clearRect(0, 0, cvs.width, cvs.height);
+  particles.forEach(p => { p.update(); p.draw(c); });
+  rings.forEach(r => { r.update(); r.draw(c); });
+  speedLines.forEach(s => { s.update(); s.draw(c); });
+  particles = particles.filter(p => p.life > 0);
+  rings = rings.filter(r => !r.done);
+  speedLines = speedLines.filter(s => !s.done);
+  if (particles.length > 0 || rings.length > 0 || speedLines.length > 0) {
+    animId = requestAnimationFrame(tick);
+  } else {
+    animId = null;
+    c.clearRect(0, 0, cvs.width, cvs.height);
+  }
+}
+
+// ============================
+// エフェクト
+// ============================
+
+// レインボーフラッシュ（虹7色を高速サイクル）
+function rainbowFlash(count) {
+  const colors = [
+    'rgba(255,0,64,0.30)', 'rgba(255,150,0,0.30)', 'rgba(255,220,0,0.27)',
+    'rgba(0,255,100,0.27)', 'rgba(0,150,255,0.30)', 'rgba(180,0,255,0.27)', 'rgba(255,0,180,0.30)'
+  ];
+  const iv = 52;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const el = document.getElementById('flash-overlay');
+      el.style.background = colors[i % colors.length];
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; }, 30);
+    }, i * iv);
+  }
+}
+
+// レインボーリング（ROYGBIV順に展開）
+function spawnRainbowRings(count) {
+  const colors = ['#ff0040','#ff8800','#ffdd00','#00ff88','#00aaff','#cc00ff','#ff0088'];
+  const cx = cvs.width / 2;
+  const cy = cvs.height * 0.4;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      rings.push(new Ring(cx, cy, {
+        color: colors[i % colors.length],
+        speed: 15 - i * 0.6,
+        lineWidth: 4 - i * 0.2,
+      }));
+      if (!animId) tick();
+    }, i * 60);
+  }
+}
+
+// ネオンバースト（鮮やかな虹色パーティクル）
+function spawnNeonBurst(x, y, count, opts = {}) {
+  const colors = ['#ff0040','#ff8800','#ffdd00','#00ff88','#00aaff','#cc00ff','#ff00aa','#ffffff'];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.4;
+    const speed = 4 + Math.random() * 9;
+    particles.push(new Particle(x, y, {
+      vx: Math.cos(angle) * speed * (opts.spread ?? 1.4),
+      vy: Math.sin(angle) * speed * (opts.spread ?? 1.4) - 2,
+      color: colors[i % colors.length],
+      size: 3 + Math.random() * 5,
+      decay: 0.010 + Math.random() * 0.006,
+      gravity: 0.07,
+    }));
+  }
+  if (!animId) tick();
+}
+
+function flashScreen(color) {
+  const el = document.getElementById('flash-overlay');
+  el.style.background = color;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 100);
+}
+
+// 連打フラッシュ（パチンコ風ストロボ）
+function strobeFlash(count, interval, colors) {
+  const el = document.getElementById('flash-overlay');
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      el.style.background = colors[i % colors.length];
+      el.style.opacity = '0.2';
+      setTimeout(() => { el.style.opacity = '0'; }, interval * 0.4);
+    }, i * interval);
+  }
+}
+
+// 画面枠レインボーグロー
+function borderGlow(duration) {
+  const el = document.getElementById('border-glow');
+  el.classList.add('active');
+  setTimeout(() => el.classList.remove('active'), duration);
+}
+
+// カラーパルス（画面全体が色で染まる）
+function colorPulse(color, duration) {
+  const el = document.getElementById('color-pulse');
+  el.style.background = `radial-gradient(circle at 50% 50%, ${color} 0%, transparent 70%)`;
+  el.style.opacity = '0.3';
+  setTimeout(() => { el.style.opacity = '0'; }, duration);
+}
+
+// 花火バースト（画面のランダム位置で）
+function fireworks(count, delay) {
+  const colors = ['#ff0040','#fbbf24','#00ff88','#00aaff','#ff00ff','#ff8800','#ffffff'];
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const x = cvs.width * (0.15 + Math.random()*0.7);
+      const y = cvs.height * (0.1 + Math.random()*0.5);
+      spawnBurst(x, y, 35 + Math.floor(Math.random()*25), {
+        spread: 1.4,
+        color: colors[Math.floor(Math.random()*colors.length)],
+      });
+    }, i * delay);
+  }
+}
+
+function showPop(text, color, size, rainbow = false) {
+  const el = document.createElement('div');
+  el.className = rainbow ? 'pop-text pop-rainbow' : 'pop-text';
+  el.style.fontSize = size;
+  if (!rainbow) el.style.color = color;
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
+function showCombo(n) {
+  const el = document.createElement('div');
+  el.className = 'combo-text';
+  el.style.fontSize = n >= 7 ? '4rem' : n >= 5 ? '3.2rem' : '2.6rem';
+  el.textContent = `${n} COMBO`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// 画面振動（パチンコ風ガタガタ）
+function vibrate(duration) {
+  const el = document.getElementById('quiz-screen');
+  const start = Date.now();
+  function v() {
+    const t = Date.now() - start;
+    if (t > duration) { el.style.transform = ''; return; }
+    const intensity = 4 * (1 - t / duration);
+    el.style.transform = `translate(${(Math.random()-0.5)*intensity}px, ${(Math.random()-0.5)*intensity}px)`;
+    requestAnimationFrame(v);
+  }
+  v();
+}
+
+// 大当たりテキスト
+function showJackpot(text, color) {
+  const el = document.createElement('div');
+  el.className = 'jackpot-text';
+  el.style.fontSize = '3.5rem';
+  el.style.color = color;
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+function correctFx() {
+  const s = streak;
+
+  // ========== レベル1: 通常正解 — 虹色パチスロ演出 ==========
+  rainbowFlash(8);
+  showPop('CORRECT!', null, '4rem', true);
+  spawnRainbowRings(7);
+  spawnSpeedLines(18, { color: '#fff' });
+  borderGlow(1000);
+  colorPulse('rgba(180, 80, 255, 0.22)', 400);
+  spawnRain(35);
+
+  const btn = document.querySelector('.opt.is-correct');
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    spawnNeonBurst(r.left + r.width/2, r.top + r.height/2, 55, { spread: 1.4 });
+    spawnBurst(cvs.width / 2, cvs.height * 0.35, 30, { spread: 1.3 });
+  }
+
+  // ========== レベル2: 3連続以上 — 激アツ ==========
+  if (s >= 3) {
+    showCombo(s);
+    spawnRain(60);
+    spawnRings(2, { color: '#60a5fa', speed: 14, lineWidth: 3, delay: 200 });
+    spawnSpeedLines(15, { color: '#60a5fa' });
+    strobeFlash(5, 70, ['rgba(52,211,153,0.3)', 'rgba(96,165,250,0.3)', 'rgba(251,191,36,0.25)']);
+    borderGlow(1500);
+  }
+
+  // ========== レベル3: 5連続以上 — 確変突入 ==========
+  if (s >= 5) {
+    spawnRings(3, { color: '#fbbf24', speed: 10, lineWidth: 4, delay: 150 });
+    spawnRain(120);
+    fireworks(5, 140);
+    spawnSpeedLines(25, { color: '#fbbf24' });
+    spawnFountain(40);
+    strobeFlash(10, 55, ['rgba(251,191,36,0.35)', 'rgba(255,0,136,0.3)', 'rgba(0,255,136,0.25)']);
+    borderGlow(2500);
+    colorPulse('rgba(251,191,36,0.4)', 500);
+    showJackpot('EXCELLENT', '#fbbf24');
+    vibrate(400);
+  }
+
+  // ========== レベル4: 7連続以上 — 大当たり ==========
+  if (s >= 7) {
+    setTimeout(() => {
+      spawnRings(4, { color: '#ff0088', speed: 8, lineWidth: 5, delay: 100 });
+      spawnSpeedLines(40, { color: '#ff0088' });
+    }, 200);
+    spawnRain(250);
+    fireworks(10, 100);
+    spawnFountain(80);
+    strobeFlash(16, 45, [
+      'rgba(255,0,64,0.35)', 'rgba(255,136,0,0.35)', 'rgba(255,255,0,0.3)',
+      'rgba(0,255,64,0.3)', 'rgba(0,128,255,0.35)', 'rgba(136,0,255,0.3)', 'rgba(255,0,128,0.35)'
+    ]);
+    borderGlow(3500);
+    colorPulse('rgba(255,0,100,0.4)', 600);
+    setTimeout(() => colorPulse('rgba(255,200,0,0.35)', 500), 300);
+    showJackpot('大当たり', '#ff0088');
+    vibrate(800);
+  }
+
+  // ========== レベル5: 10連続以上 — FEVER ==========
+  if (s >= 10) {
+    setTimeout(() => {
+      spawnRings(5, { color: '#fff', speed: 6, lineWidth: 6, delay: 80 });
+      fireworks(15, 80);
+      spawnRain(400);
+      spawnFountain(120);
+      spawnSpeedLines(60, { color: '#fff' });
+      strobeFlash(24, 35, [
+        'rgba(255,255,255,0.4)', 'rgba(255,0,0,0.35)', 'rgba(255,200,0,0.35)',
+        'rgba(0,255,100,0.35)', 'rgba(0,100,255,0.35)', 'rgba(200,0,255,0.35)'
+      ]);
+    }, 400);
+    borderGlow(5000);
+    vibrate(1200);
+    setTimeout(() => showJackpot('FEVER!!', '#ff0000'), 500);
+    setTimeout(() => fireworks(8, 100), 800);
+    setTimeout(() => fireworks(8, 100), 1500);
+  }
+}
+
+function wrongFx() {
+  flashScreen('rgba(251,113,133,0.1)');
+  document.getElementById('quiz-screen').classList.add('shake');
+  setTimeout(() => document.getElementById('quiz-screen').classList.remove('shake'), 300);
+}
+
+// ============================
+// シャッフル
+// ============================
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
+}
+
+// ============================
+// クイズ制御
+// ============================
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startQuiz() {
+  idx = 0; score = 0; streak = 0; maxStreak = 0; results = [];
+  shuffled = shuffle(questions).map(q => {
+    const ii = shuffle([0,1,2,3]);
+    return { ...q, options: ii.map(i=>q.options[i]), answer: ii.indexOf(q.answer) };
+  });
+  show('quiz-screen');
+  render();
+}
+
+function render() {
+  const q = shuffled[idx];
+  document.getElementById('q-num').textContent = `${idx+1} / ${shuffled.length}`;
+  document.getElementById('q-score').textContent = `${score} correct`;
+  const streakEl = document.getElementById('q-streak');
+  if (streak >= 2) { streakEl.style.display = ''; streakEl.textContent = `${streak} streak`; streakEl.style.color = streak >= 5 ? '#f59e0b' : '#818cf8'; }
+  else { streakEl.style.display = 'none'; }
+  document.getElementById('progress-fill').style.width = `${(idx/shuffled.length)*100}%`;
+  document.getElementById('q-cat').textContent = q.category;
+  document.getElementById('q-text').textContent = q.question;
+
+  const box = document.getElementById('opts');
+  box.innerHTML = '';
+  q.options.forEach((o,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = `<span class="badge">${String.fromCharCode(65+i)}</span><span>${o}</span>`;
+    btn.onclick = () => answer(i);
+    box.appendChild(btn);
+  });
+
+  document.getElementById('explanation').style.display = 'none';
+  document.getElementById('next-wrap').style.display = 'none';
+}
+
+function answer(sel) {
+  const q = shuffled[idx];
+  const ok = sel === q.answer;
+
+  document.querySelectorAll('.opt').forEach((btn,i) => {
+    btn.disabled = true;
+    if (i === q.answer) btn.classList.add('is-correct');
+    else if (i === sel && !ok) btn.classList.add('is-wrong');
+    else btn.classList.add('is-dim');
+  });
+
+  if (ok) { score++; streak++; if (streak > maxStreak) maxStreak = streak; correctFx(); }
+  else { streak = 0; wrongFx(); }
+
+  results.push({ question: q, userAnswer: sel, correct: ok });
+
+  document.getElementById('explanation-text').textContent = q.explanation;
+  document.getElementById('explanation').style.display = '';
+  document.getElementById('next-wrap').style.display = '';
+  document.getElementById('next-btn').textContent = idx === shuffled.length-1 ? 'RESULT' : 'NEXT';
+  document.getElementById('q-score').textContent = `${score} correct`;
+}
+
+function nextQuestion() {
+  idx++;
+  if (idx >= shuffled.length) showResult();
+  else render();
+}
+
+// ============================
+// 結果画面
+// ============================
+function showResult() {
+  show('result-screen');
+  const total = shuffled.length;
+  const rate = Math.round((score/total)*100);
+
+  document.getElementById('r-score').textContent = `${score} / ${total}`;
+  document.getElementById('r-rate').textContent = `${rate}%  correct`;
+
+  let badge = '';
+  if (rate === 100) badge = 'PERFECT';
+  else if (rate >= 80) badge = 'GREAT — 合格圏内';
+  else if (rate >= 60) badge = 'GOOD — もう少し';
+  else badge = 'KEEP GOING — 復習しよう';
+  const badgeEl = document.getElementById('r-badge');
+  badgeEl.textContent = badge;
+  badgeEl.style.color = rate >= 80 ? '#34d399' : rate >= 60 ? '#fbbf24' : '#f87171';
+
+  if (rate >= 80) spawnRain(rate === 100 ? 200 : 80);
+
+  // カテゴリ集計
+  const stats = {};
+  results.forEach(r => {
+    const cat = r.question.category;
+    if (!stats[cat]) stats[cat] = { total:0, ok:0 };
+    stats[cat].total++; if (r.correct) stats[cat].ok++;
+  });
+
+  const entries = Object.entries(stats).sort((a,b) => a[1].ok/a[1].total - b[1].ok/b[1].total);
+
+  const chart = document.getElementById('chart');
+  chart.innerHTML = '';
+  entries.forEach(([cat, s]) => {
+    const r = Math.round((s.ok/s.total)*100);
+    const color = r >= 80 ? '#34d399' : r >= 50 ? '#fbbf24' : '#f87171';
+    const dim = r >= 80 ? 'rgba(52,211,153,0.15)' : r >= 50 ? 'rgba(251,191,36,0.15)' : 'rgba(248,113,113,0.15)';
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px;">
+        <span style="color:var(--text);font-weight:500;">${cat}</span>
+        <span style="color:${color};font-weight:700;">${s.ok}/${s.total} (${r}%)</span>
+      </div>
+      <div style="width:100%;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">
+        <div class="chart-fill" style="width:0%;height:100%;background:${color};border-radius:3px;box-shadow:0 0 8px ${dim};"></div>
+      </div>`;
+    chart.appendChild(row);
+    setTimeout(() => { row.querySelector('.chart-fill').style.width = r+'%'; }, 150);
+  });
+
+  // 不得意
+  const weak = entries.filter(([,s]) => s.ok/s.total < 0.8).slice(0,3);
+  const weakWrap = document.getElementById('weak-wrap');
+  const weakList = document.getElementById('weak-list');
+  weakList.innerHTML = '';
+  if (weak.length) {
+    weakWrap.style.display = '';
+    weak.forEach(([cat,s]) => {
+      const r = Math.round((s.ok/s.total)*100);
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;justify-content:space-between;padding:10px 14px;border-radius:8px;background:rgba(248,113,113,0.08);';
+      el.innerHTML = `<span style="font-weight:500;font-size:0.85rem;">${cat}</span><span style="font-weight:700;color:var(--wrong);font-size:0.85rem;">${r}%</span>`;
+      weakList.appendChild(el);
+    });
+  } else { weakWrap.style.display = 'none'; }
+
+  // 間違えた問題
+  const wrongs = results.filter(r => !r.correct);
+  const wrongWrap = document.getElementById('wrong-wrap');
+  const wrongList = document.getElementById('wrong-list');
+  wrongList.innerHTML = '';
+  if (wrongs.length) {
+    wrongWrap.style.display = '';
+    wrongs.forEach(r => {
+      const q = r.question;
+      const el = document.createElement('div');
+      el.style.cssText = 'border-bottom:1px solid var(--border);padding-bottom:16px;';
+      el.innerHTML = `
+        <div class="cat-tag" style="margin-bottom:8px;font-size:0.65rem;">${q.category}</div>
+        <p style="font-size:0.85rem;line-height:1.7;margin-bottom:10px;font-weight:500;">${q.question}</p>
+        <div style="padding-left:12px;border-left:2px solid rgba(248,113,113,0.3);font-size:0.8rem;">
+          <p style="color:var(--wrong);margin-bottom:4px;"><strong>Your answer:</strong> ${q.options[r.userAnswer]}</p>
+          <p style="color:var(--correct);margin-bottom:8px;"><strong>Correct:</strong> ${q.options[q.answer]}</p>
+          <p style="color:var(--text-dim);line-height:1.7;">${q.explanation}</p>
+        </div>`;
+      wrongList.appendChild(el);
+    });
+  } else { wrongWrap.style.display = 'none'; }
+}
+
+function restart() { show('start-screen'); }
+</script>
+</body>
+</html>

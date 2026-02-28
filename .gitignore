@@ -1,0 +1,31 @@
+# 環境変数・APIキー
+.env
+.env.local
+.env.*.local
+*.env
+secrets.json
+config/secrets.*
+credentials
+
+# AWS認証情報
+.aws/
+aws-credentials*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# エディタ
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ログ
+*.log
+logs/
+
+# 依存関係（将来的にnpm等を使う場合）
+node_modules/
