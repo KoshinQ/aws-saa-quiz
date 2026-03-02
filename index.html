@@ -288,6 +288,32 @@
     0%   { background-position: 0% 50%; }
     100% { background-position: 300% 50%; }
   }
+
+  /* ===== 履歴画面 ===== */
+  .hist-item {
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: background 0.2s;
+  }
+  .hist-rate-circle {
+    flex-shrink: 0;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 800;
+    border: 2px solid;
+  }
+  .btn-danger {
+    padding: 10px 24px; border: 1px solid rgba(251,113,133,0.3); border-radius: 12px;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; letter-spacing: 0.03em;
+    background: rgba(251,113,133,0.06); color: var(--wrong); transition: all 0.2s ease;
+  }
+  .btn-danger:hover { background: rgba(251,113,133,0.12); border-color: rgba(251,113,133,0.5); }
 </style>
 </head>
 <body>
@@ -327,8 +353,33 @@
       </div>
     </div>
 
+    <!-- 統計サマリー（履歴がある場合のみ表示） -->
+    <div id="start-stats" style="display:none;margin-bottom:20px;">
+      <div class="glass-subtle" style="padding:16px 20px;display:flex;justify-content:space-around;text-align:center;">
+        <div>
+          <div id="stat-attempts" style="font-size:1.4rem;font-weight:900;color:var(--accent);">0</div>
+          <div style="font-size:0.65rem;color:var(--text-dim);margin-top:2px;">挑戦回数</div>
+        </div>
+        <div style="width:1px;background:var(--border-subtle);"></div>
+        <div>
+          <div id="stat-best" style="font-size:1.4rem;font-weight:900;color:#34d399;">-</div>
+          <div style="font-size:0.65rem;color:var(--text-dim);margin-top:2px;">最高スコア</div>
+        </div>
+        <div style="width:1px;background:var(--border-subtle);"></div>
+        <div>
+          <div id="stat-avg" style="font-size:1.4rem;font-weight:900;color:#fbbf24;">-%</div>
+          <div style="font-size:0.65rem;color:var(--text-dim);margin-top:2px;">平均正答率</div>
+        </div>
+      </div>
+    </div>
+
     <button class="btn-primary" onclick="startQuiz()">START</button>
-    <div style="margin-top:16px;font-size:0.65rem;color:var(--text-dim);">問題・選択肢は毎回シャッフルされます</div>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:12px;">
+      <div style="font-size:0.65rem;color:var(--text-dim);">問題・選択肢は毎回シャッフルされます</div>
+    </div>
+    <div style="margin-top:12px;text-align:center;">
+      <button class="btn-ghost" style="padding:10px 28px;font-size:0.8rem;" onclick="showHistory()">HISTORY</button>
+    </div>
   </div>
 </div>
 
@@ -399,9 +450,30 @@
       <div id="wrong-list" style="display:flex;flex-direction:column;gap:20px;"></div>
     </div>
 
-    <div style="text-align:center;padding-bottom:40px;">
+    <div style="text-align:center;padding-bottom:40px;display:flex;justify-content:center;gap:16px;">
       <button class="btn-primary" onclick="restart()">RETRY</button>
+      <button class="btn-ghost" onclick="show('start-screen')">HOME</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== 履歴画面 ===== -->
+<div id="history-screen" class="screen" style="min-height:100vh;padding:32px 16px;flex-direction:column;">
+  <div style="max-width:680px;width:100%;margin:0 auto;" class="slide-up">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:32px;">
+      <button class="btn-ghost" style="padding:10px 20px;font-size:0.8rem;" onclick="show('start-screen')">← BACK</button>
+      <div style="flex:1;">
+        <div style="font-size:0.7rem;font-weight:600;color:var(--text-dim);letter-spacing:0.1em;">HISTORY</div>
+        <div style="font-size:1.2rem;font-weight:800;">過去の挑戦記録</div>
+      </div>
+      <button class="btn-danger" onclick="clearHistory()">クリア</button>
+    </div>
+
+    <div id="hist-empty" style="display:none;text-align:center;padding:60px 0;color:var(--text-dim);font-size:0.9rem;">
+      まだ記録がありません。<br>クイズに挑戦してみましょう！
+    </div>
+
+    <div id="hist-list" style="display:flex;flex-direction:column;gap:10px;padding-bottom:40px;"></div>
   </div>
 </div>
 
@@ -776,6 +848,860 @@ const questions = [
     ],
     answer: 1,
     explanation: "AWS Organizationsの一括請求を使用すると、組織内のアカウント間でリザーブドインスタンスの割引が自動的に共有されます。アカウントAのRIが未使用の場合、同じインスタンスタイプを使用するアカウントBに自動適用されます。RIマーケットプレイスは外部への売買用で、組織内共有には不適切です。"
+  },
+
+  // --- コンピューティング追加 (10) ---
+  {
+    category: "コンピューティング",
+    question: "ALBの背後で動作するECS Fargateサービスがあります。トラフィックの急増に備えてAuto Scalingを設定したいですが、ALBのリクエスト数に基づいてスケールさせたいです。最も適切なスケーリング設定はどれですか？",
+    options: [
+      "CPU使用率70%をターゲットにしたターゲット追跡スケーリングを設定する",
+      "ALBRequestCountPerTargetをターゲット追跡スケーリングのメトリクスに使用する",
+      "CloudWatch AlarmでALBのActiveConnectionCountを監視してステップスケーリングする",
+      "スケジュールドスケーリングでトラフィックピーク時間帯に事前スケールアウトする"
+    ],
+    answer: 1,
+    explanation: "ALBRequestCountPerTargetはECS Auto Scalingのターゲット追跡スケーリングで直接使用できるメトリクスで、1タスクあたりのリクエスト数を一定に保つようにスケールします。CPU使用率ではリクエスト数の急増に遅れて反応します。ActiveConnectionCountはタスク数と相関しない場合があります。"
+  },
+  {
+    category: "コンピューティング",
+    question: "Lambda関数のコールドスタートによるレイテンシーがユーザー体験に影響しています。関数はNode.jsで書かれており、実行時間は平均200ms、コールドスタート時は1.5秒かかります。最もコスト効率よくコールドスタートを改善する方法はどれですか？",
+    options: [
+      "Lambda Provisioned Concurrencyを設定して常時ウォームな状態を維持する",
+      "EventBridgeで5分ごとにダミーリクエストを送り関数をウォームアップする",
+      "Lambda SnapStartを有効にする",
+      "関数のメモリを3008MBに増やしてCPU性能を向上させる"
+    ],
+    answer: 2,
+    explanation: "Lambda SnapStartはJavaとNode.js（最新ランタイム）で利用可能で、初期化済みのスナップショットから関数を起動することでコールドスタートを大幅に削減します。Provisioned Concurrencyも効果的ですが常時課金されコストが高くなります。ダミーリクエストは非効率でスケールアウト時には対応できません。"
+  },
+  {
+    category: "コンピューティング",
+    question: "EC2インスタンス上で動作するアプリケーションが、他のAWSサービス（S3、DynamoDB）にアクセスする必要があります。開発者がアクセスキーをコードにハードコードしています。このセキュリティリスクを解消する最も適切な方法はどれですか？",
+    options: [
+      "アクセスキーをAWS Secrets Managerに移動し、SDKで取得する",
+      "EC2インスタンスにIAMロールをアタッチし、コードからアクセスキーを削除する",
+      "アクセスキーを環境変数に移動し、AWS Systems Manager Parameter Storeで管理する",
+      "IAMユーザーのアクセスキーを90日ごとにローテーションする"
+    ],
+    answer: 1,
+    explanation: "EC2インスタンスにIAMロールをアタッチすると、インスタンスメタデータサービス（IMDS）経由で一時的な認証情報が自動的に提供されます。アクセスキーの管理が不要になり、最小権限の原則を適用できます。Secrets Managerは有効ですが追加コストが発生します。環境変数はコードより安全ですが、依然としてキー管理が必要です。"
+  },
+  {
+    category: "コンピューティング",
+    question: "オンプレミスのVMware環境からAWSへの移行を計画しています。100台のVMの依存関係を分析し、移行グループを決定する必要があります。最も適切なサービスはどれですか？",
+    options: [
+      "AWS Application Migration Service（MGN）でサーバーをリフト&シフトする",
+      "AWS Migration Hubでマイグレーションの進捗を追跡する",
+      "AWS Application Discovery Serviceでサーバーの設定と依存関係を収集・分析する",
+      "AWS Database Migration Service（DMS）でデータベースを移行する"
+    ],
+    answer: 2,
+    explanation: "AWS Application Discovery Serviceはオンプレミスサーバーにエージェントをインストールまたはエージェントレスで、サーバースペック、パフォーマンスデータ、プロセス間の依存関係を収集します。この情報を元に移行グループ（ウェーブ）を計画できます。Migration Hubは追跡ツール、MGNは実際の移行実行サービスです。"
+  },
+  {
+    category: "コンピューティング",
+    question: "Webアプリケーションで、ユーザーがアップロードした動画を複数の解像度にトランスコードする処理があります。処理時間は動画サイズにより5分〜2時間と大きく変動します。コストを最小化しながらスケーラブルに処理する構成はどれですか？",
+    options: [
+      "EC2のAuto ScalingグループでSQSキューの深さに基づいてスケールし、スポットインスタンスを使用する",
+      "AWS Elemental MediaConvertでトランスコードジョブを管理する",
+      "Lambda関数でトランスコード処理を実行し、最大タイムアウト15分を活用する",
+      "AWS Batchで管理されたコンピューティング環境を使用し、スポットインスタンスでジョブを実行する"
+    ],
+    answer: 3,
+    explanation: "AWS Batchは長時間・可変時間のバッチジョブに最適で、スポットインスタンスで最大90%のコスト削減が可能です。ジョブキュー、優先度、リトライポリシーを柔軟に設定できます。Lambdaは15分制限があり2時間の処理には不向き。MediaConvertは動画トランスコード専用のマネージドサービスで、カスタム処理には対応できません。"
+  },
+  {
+    category: "コンピューティング",
+    question: "マルチリージョン展開されたアプリケーションで、各リージョンのEC2インスタンスに設定ファイルを配布する必要があります。設定変更時は30秒以内に全リージョンに反映させたいです。最も適切な方法はどれですか？",
+    options: [
+      "S3バケットのCRRで設定ファイルを全リージョンに複製し、インスタンスは定期的にポーリングする",
+      "AWS Systems Manager Parameter StoreのAdvancedパラメータを使用し、EventBridgeで変更通知をトリガーする",
+      "AWS AppConfigを使用し、デプロイ戦略でリアルタイムに設定を配布する",
+      "AWS CodeDeployで設定ファイルを全リージョンのインスタンスにデプロイする"
+    ],
+    answer: 2,
+    explanation: "AWS AppConfigは設定管理に特化したサービスで、バリデーション、段階的デプロイ、即時ロールバックをサポートします。エージェントがインスタンス上でポーリングし、30秒以内の反映が可能です。Parameter Storeは設定保存には適していますが、プッシュ型の配布機能はありません。CodeDeployはアプリケーションデプロイ用で設定配布には過剰です。"
+  },
+  {
+    category: "コンピューティング",
+    question: "コンテナ化されたマイクロサービスをEKSで運用しています。一部のPodが特定のEC2インスタンスタイプ（GPU搭載）でのみ動作する必要があります。該当Podを正しいノードにスケジューリングする方法として最も適切なものはどれですか？",
+    options: [
+      "NodeSelectorでインスタンスタイプのラベルを指定する",
+      "PodAffinityルールで同じノードグループのPodと共存させる",
+      "Node Affinityのrequiredルールでインスタンスタイプを指定し、TaintとTolerationでGPUノードへの不要Podのスケジューリングを防ぐ",
+      "LimitRangeでGPUリソースのリクエストを指定する"
+    ],
+    answer: 2,
+    explanation: "Node AffinityのrequiredDuringSchedulingルールでGPUノードを指定し、さらにTaintをGPUノードに付与してTolerationのないPodがスケジュールされないようにすることが最善策です。NodeSelectorは単純な指定に使えますが、柔軟性がありません。Node Affinity+Taint/Tolerationの組み合わせがKubernetesのベストプラクティスです。"
+  },
+  {
+    category: "コンピューティング",
+    question: "Lambdaを使ったサーバーレスアーキテクチャで、複数のLambda関数間でコードを共有したいです。共有コードは頻繁に更新されます。最も管理しやすい方法はどれですか？",
+    options: [
+      "各Lambda関数のデプロイパッケージに共有コードを含める",
+      "Lambda Layersに共有コードをパッケージし、各関数からレイヤーを参照する",
+      "共有コードをS3に置き、各Lambda関数の起動時にダウンロードする",
+      "共有コードを提供するマイクロサービスをLambdaで作成し、他の関数から呼び出す"
+    ],
+    answer: 1,
+    explanation: "Lambda Layersは共有コード・ライブラリを1か所で管理し、複数の関数から参照できます。更新時はレイヤーのバージョンを上げるだけで済み、各関数のデプロイパッケージを更新する必要がありません。S3からのダウンロードはコールドスタート時間を増加させます。マイクロサービス化は不必要なネットワーク呼び出しが発生します。"
+  },
+  {
+    category: "コンピューティング",
+    question: "EC2 Spot Instancesを使ったバッチ処理システムで、スポットの中断時にジョブが途中で失われないようにしたいです。最も適切な対策はどれですか？",
+    options: [
+      "スポット中断通知（2分前の警告）をEC2メタデータAPIでポーリングし、チェックポイントを保存してSQSキューにジョブを戻す",
+      "Spot Fleet内のインスタンス数を多めに設定してジョブの並列数を増やす",
+      "スポットインスタンスの中断が発生した際のAuto Scalingグループのヘルスチェック時間を短縮する",
+      "CloudTrailでスポット中断イベントを監視してアラートを送信する"
+    ],
+    answer: 0,
+    explanation: "EC2はスポット中断の2分前にインスタンスメタデータ経由で通知します。この通知を定期的にポーリングして検知した際に処理状態をチェックポイント保存（S3やDynamoDBなど）し、未完了のジョブをSQSキューに戻すことで中断耐性を実現できます。これがスポットインスタンスでのベストプラクティスです。"
+  },
+  {
+    category: "コンピューティング",
+    question: "Elastic Beanstalkで運用しているWebアプリケーションをBlue/Greenデプロイしたいです。Elastic Beanstalkネイティブの機能で実現する最も適切な方法はどれですか？",
+    options: [
+      "Elastic BeanstalkのRolling with additional batch デプロイポリシーを使用する",
+      "新しい環境（Green）を作成し、Elastic BeanstalkのSwap Environment URLs機能でトラフィックを切り替える",
+      "Route 53の加重ルーティングで旧環境から新環境にトラフィックを徐々に移行する",
+      "ALBのリスナールールで新環境のターゲットグループへのトラフィック比率を変更する"
+    ],
+    answer: 1,
+    explanation: "Elastic BeanstalkのSwap Environment URLs機能は、2つの環境のCNAMEを入れ替えることでダウンタイムゼロのBlue/Greenデプロイを実現します。新環境でテストを完了後、一瞬で切り替えられ、問題があれば再スワップで即座にロールバックできます。Rolling with additional batchは新旧混在期間があります。"
+  },
+
+  // --- ストレージ追加 (10) ---
+  {
+    category: "ストレージ",
+    question: "S3バケットに保存された大量の小さいファイル（平均10KB、1億件）に対してSQL分析を実行したいです。データはJSON形式です。最もコスト効率よく分析する方法はどれですか？",
+    options: [
+      "S3のデータをAmazon Redshiftにロードして分析する",
+      "Amazon Athenaを使用してS3のJSONデータを直接クエリする",
+      "AWS GlueでデータをParquet形式に変換してからAthenaでクエリする",
+      "EMR上のSparkでS3のJSONデータを直接処理する"
+    ],
+    answer: 2,
+    explanation: "1億件の小さいJSONファイルをAthenaで直接クエリすると、S3 APIのリクエスト数が膨大になりコストと時間がかかります。まずGlueでJSON→Parquet（列指向、圧縮）に変換し、ファイルを統合することで、Athenaのスキャンデータ量を大幅に削減（最大95%）できます。Parquet変換後はAthenaのコストが最安です。"
+  },
+  {
+    category: "ストレージ",
+    question: "S3バケットへのアクセスを特定のVPCからのみに制限したいです。インターネット経由のアクセスは完全に遮断する必要があります。最も適切な設定はどれですか？",
+    options: [
+      "S3バケットポリシーでaws:SourceVpcの条件でVPC IDを指定する",
+      "VPCゲートウェイエンドポイントを作成し、S3バケットポリシーでaws:SourceVpceの条件でエンドポイントIDを指定する",
+      "S3バケットのパブリックアクセスブロックを有効にし、バケットポリシーでVPCのCIDRを許可する",
+      "S3バケットをVPC内に移動してプライベートアクセスのみにする"
+    ],
+    answer: 1,
+    explanation: "VPCゲートウェイエンドポイント経由でS3にアクセスし、バケットポリシーでaws:SourceVpce条件を使ってエンドポイントIDを指定することで、そのVPCからのアクセスのみを許可できます。aws:SourceVpc条件はエンドポイント経由のアクセスでのみ評価されます。S3はVPC内には存在せず、CIDRでの制限はS3では機能しません。"
+  },
+  {
+    category: "ストレージ",
+    question: "EFSファイルシステムを複数のEC2インスタンスで共有しています。一部のインスタンスはパフォーマンスに敏感なアプリケーション用で、他のインスタンスは低優先度のバッチ処理用です。バッチ処理がパフォーマンスに影響しないようにする方法はどれですか？",
+    options: [
+      "バッチ処理インスタンス用に別のEFSファイルシステムを作成する",
+      "EFSのスループットモードをElasticに変更する",
+      "バッチ処理インスタンスがEFSへのアクセスにS3 Transfer Accelerationを使用する",
+      "高優先度インスタンスのEFSマウントにio1ボリュームをキャッシュとして追加する"
+    ],
+    answer: 0,
+    explanation: "EFSには現時点でQoS（サービス品質）やアクセス優先度の設定機能がありません。バッチ処理用に別のEFSファイルシステムを用意することで、パフォーマンスへの影響を完全に分離できます。Elasticスループットはトラフィックに応じて自動調整しますが、バッチ処理による競合は解消されません。"
+  },
+  {
+    category: "ストレージ",
+    question: "S3にある静的Webサイトのコンテンツを、世界中のユーザーに低レイテンシーで配信したいです。一部のコンテンツは認証済みユーザーのみアクセス可能です。最も適切な構成はどれですか？",
+    options: [
+      "S3バケットをパブリック公開してCloudFrontで配信し、プライベートコンテンツはPresigned URLを使用する",
+      "CloudFrontでS3オリジンを設定し、Origin Access Control（OAC）でS3を非公開にする。プライベートコンテンツはCloudFront Signed URLまたはSigned Cookieで制御する",
+      "CloudFrontのオリジンにALBを挟み、ALBリスナールールで認証を行う",
+      "S3バケットをプライベートにし、Lambda@Edgeで認証チェックを行う"
+    ],
+    answer: 1,
+    explanation: "OACはCloudFrontからS3へのアクセスをセキュアに行う最新の推奨方法です（OAIの後継）。S3バケットを完全に非公開にしてCloudFront経由のみアクセスを許可します。Signed URLやSigned CookieでプライベートコンテンツへのアクセスをCloudFrontレベルで制御できます。"
+  },
+  {
+    category: "ストレージ",
+    question: "オンプレミスのWindowsファイルサーバー（Active Directory統合済み）をAWSに移行したいです。既存のユーザーはADの認証でSMBプロトコルを使用してアクセスを継続する必要があります。最も適切なサービスはどれですか？",
+    options: [
+      "Amazon EFSでSMBマウントを設定する",
+      "Amazon FSx for Windows File Serverを使用する",
+      "AWS Storage GatewayのFile GatewayでSMBを有効にする",
+      "Amazon S3に移行してS3ファイルゲートウェイを使用する"
+    ],
+    answer: 1,
+    explanation: "FSx for Windows File ServerはフルマネージドのWindowsファイルシステムで、AD統合、SMBプロトコル、DFS名前空間、Windowsのアクセス制御リスト（ACL）をネイティブにサポートします。EFSはLinux/NFS向けです。Storage GatewayのFile GatewayはSMBをサポートしますが、S3がバックエンドのキャッシュ型で、完全なWindowsファイルサーバーの代替にはなりません。"
+  },
+  {
+    category: "ストレージ",
+    question: "S3バケットに日々大量のログファイルがアップロードされます。毎日夜間に前日のログを処理するEMRジョブが実行されます。S3の費用を最小化しながらデータの可用性を維持する構成はどれですか？",
+    options: [
+      "S3 Intelligent-Tieringを使用して自動的に最適なストレージクラスに移行する",
+      "アップロード時はS3 Standardに保存し、処理完了後にS3 Glacier Deep Archiveに移行、90日後に削除するライフサイクルポリシーを設定する",
+      "アップロード時はS3 Standard-IAに直接保存し、90日後に削除するライフサイクルポリシーを設定する",
+      "S3 One Zone-IAでコストを削減し、ライフサイクルポリシーで60日後に削除する"
+    ],
+    answer: 2,
+    explanation: "ログファイルはアップロード直後（翌日のEMR処理）以降ほとんどアクセスされないため、S3 Standard-IAが適切です。Standard-IAはアクセス頻度が低いデータに最適で、Standardより約40%安価です。ログは再アクセスの可能性があるためDeep Archiveは不適切。One Zone-IAは複数AZの可用性が不要な場合のみ推奨されます。"
+  },
+  {
+    category: "ストレージ",
+    question: "複数のEC2インスタンスで同一のEBSボリュームをマウントして、共有ストレージとして使用したいという要件があります。最も適切な対応はどれですか？",
+    options: [
+      "EBSのマルチアタッチ機能（io1/io2ボリューム）を使用し、複数インスタンスにアタッチする",
+      "EFSを使用してNFSプロトコルで複数インスタンスから共有マウントする",
+      "io2 Block Expressボリュームをマルチアタッチで最大16インスタンスにアタッチする",
+      "EBSスナップショットを共有してそれぞれのインスタンスで別ボリュームを作成する"
+    ],
+    answer: 1,
+    explanation: "一般的な共有ストレージ要件にはEFSが最適です。EFSはNFSv4プロトコルで複数インスタンスから同時マウント可能で、自動的にスケールし高可用性があります。EBSマルチアタッチは技術的に可能ですが、クラスター対応のファイルシステム（GFS2等）が必要で、アプリケーション側で並行書き込みを管理する必要があります。通常のファイル共有にはEFSが正解です。"
+  },
+  {
+    category: "ストレージ",
+    question: "S3バケット内のオブジェクトが誤って削除された場合に備えたい。削除操作を実行できるのはルートアカウントのみとし、一般の管理者はオブジェクトを削除できないようにしたいです。最も適切な設定はどれですか？",
+    options: [
+      "S3バケットポリシーでs3:DeleteObjectアクションをDenyする",
+      "S3バージョニングを有効にし、MFA Deleteを有効にする",
+      "S3 Object Lockのガバナンスモードを設定する",
+      "IAMポリシーでDeleteObjectを全ユーザーにDenyする"
+    ],
+    answer: 1,
+    explanation: "MFA DeleteはS3バージョニングと組み合わせることで、オブジェクトの完全削除とバージョニングの設定変更にMFA認証を必要とします。ルートアカウントのMFAデバイスを使用するため、一般の管理者（IAMユーザー）は削除できません。バケットポリシーやIAMポリシーはルートアカウントには適用されないため、ルートのみに限定する手段としてはMFA Deleteが正解です。"
+  },
+  {
+    category: "ストレージ",
+    question: "50TB のデータを毎月オンプレミスからS3にアップロードする必要があります。インターネット帯域は100Mbpsで、AWS Direct Connectはありません。最もコスト効率よく転送する方法はどれですか？",
+    options: [
+      "AWS Snowball Edgeを毎月使用してデータを物理転送する",
+      "AWS DataSyncをインターネット経由で使用して転送を最適化する",
+      "S3 Transfer Accelerationを有効にして転送速度を向上させる",
+      "AWS Storage GatewayのVolume Gatewayでデータを同期する"
+    ],
+    answer: 0,
+    explanation: "100Mbpsの帯域で50TBを転送するには理論上約46日かかります。毎月では到底追いつきません。Snowball Edgeは物理デバイスで80TB転送が可能で、往復で1〜2週間で完了します。DataSyncは転送を最適化しますが帯域の物理的限界は超えられません。S3 Transfer Accelerationも同様です。大量データには物理転送が最適です。"
+  },
+  {
+    category: "ストレージ",
+    question: "Amazon S3のS3 Select機能を使う最適なユースケースはどれですか？",
+    options: [
+      "S3に保存されたCSVファイルの特定の列だけを取得して転送データ量を削減する",
+      "S3バケット間でオブジェクトをコピーする際にコンテンツを変換する",
+      "S3のオブジェクトを暗号化して保存する",
+      "複数のS3バケットにまたがるSQLクエリを実行する"
+    ],
+    answer: 0,
+    explanation: "S3 SelectはS3上のCSV、JSON、Parquetファイルに対してSQLライクなクエリを実行し、条件に合致するデータのみを取得できます。ファイル全体をダウンロードせずに必要な列・行のみを取得できるため、転送コストとレイテンシーを大幅に削減できます。複数バケットにまたがるクエリはAthenaの機能です。"
+  },
+
+  // --- データベース追加 (10) ---
+  {
+    category: "データベース",
+    question: "DynamoDBを使用するアプリケーションで、特定の顧客IDに紐づく全注文を取得し、日付でフィルタリングする必要があります。現在、顧客IDをパーティションキー、注文IDをソートキーとして設計しています。日付でのフィルタリングを効率化する最も適切な方法はどれですか？",
+    options: [
+      "日付をパーティションキー、顧客IDをソートキーに変更してGSIを作成する",
+      "顧客IDをパーティションキー、注文日をソートキーとするGSI（グローバルセカンダリインデックス）を作成する",
+      "DynamoDB Streamsで日付インデックスをElasticsearchに同期する",
+      "FilterExpressionで日付条件を指定して全注文をスキャン後にフィルタリングする"
+    ],
+    answer: 1,
+    explanation: "顧客IDをパーティションキー、注文日をソートキーとするGSIを作成することで、特定顧客の注文を日付でクエリできます。between条件でソートキーの範囲検索も可能です。FilterExpressionは全データを読み取り後にフィルタするため効率が悪く、コストもかかります。GSIによる設計がDynamoDBのベストプラクティスです。"
+  },
+  {
+    category: "データベース",
+    question: "Amazon RDS for PostgreSQLのMulti-AZデプロイメントで、フェイルオーバーが発生した際のダウンタイムを最小化する方法はどれですか？",
+    options: [
+      "RDS Proxyを導入して接続プールを管理し、フェイルオーバー時の接続再確立を自動化する",
+      "アプリケーションにリトライロジックを実装してフェイルオーバー時の接続エラーを処理する",
+      "リードレプリカを追加してフェイルオーバー先の候補を増やす",
+      "RDSのフェイルオーバーを手動でトリガーして事前にテストする"
+    ],
+    answer: 0,
+    explanation: "RDS ProxyはRDSインスタンスへの接続を維持・プールし、フェイルオーバー時にアプリケーションからの接続をスタンバイインスタンスに自動的に切り替えます。アプリケーションはRDS ProxyのエンドポイントにPointing先を変えるだけで、フェイルオーバーの影響（通常60-120秒）を数秒に短縮できます。"
+  },
+  {
+    category: "データベース",
+    question: "Aurora Serverless v2を使用するWebアプリケーションで、トラフィックが完全にゼロになる深夜にコストを最小化したいです。一方、トラフィック再開時の初回リクエストのレイテンシーも許容できる範囲にしたいです。最も適切な設定はどれですか？",
+    options: [
+      "最小ACUを0に設定してトラフィックがない時間は完全に停止させる",
+      "最小ACUを0.5に設定してベースラインの計算容量を維持しながらコストを抑える",
+      "Aurora Serverless v1に移行してauto-pause機能を使用する",
+      "最小ACUを2に設定してコールドスタートを防ぐ"
+    ],
+    answer: 1,
+    explanation: "Aurora Serverless v2は最小ACUを0.5に設定できます（0には設定不可）。0.5 ACUで待機状態を維持することで、トラフィック再開時の即座なスケールアップが可能で、コールドスタートの問題を避けられます。Aurora Serverless v1はauto-pauseで完全停止できますが、再起動に数十秒かかりv2より機能が限定されます。"
+  },
+  {
+    category: "データベース",
+    question: "リレーショナルデータベースをAWSに移行する際、AWS Schema Conversion Tool（SCT）が最も活躍するシナリオはどれですか？",
+    options: [
+      "Oracle DatabaseからAmazon Aurora PostgreSQL互換へのヘテロジニアス移行",
+      "MySQL 5.7からMySQL 8.0へのバージョンアップグレード",
+      "Amazon RDS for OracleからAmazon DynamoDBへの移行",
+      "オンプレミスのPostgreSQLからAmazon RDS for PostgreSQLへの移行"
+    ],
+    answer: 0,
+    explanation: "AWS SCTはエンジンが異なるヘテロジニアス移行（例：Oracle→PostgreSQL）でスキーマ変換に最も活躍します。ストアドプロシージャ、トリガー、関数などのデータベース固有のコードを自動変換し、変換できない部分を報告します。同一エンジン間の移行（ホモジニアス）はSCTなしでDMSのみで対応できます。"
+  },
+  {
+    category: "データベース",
+    question: "eコマースアプリケーションで、「在庫数を読んで、注文があれば1を引く」という処理を複数のLambda関数が同時に実行しています。DynamoDBで在庫の二重引き落としを防ぐ最も適切な方法はどれですか？",
+    options: [
+      "DynamoDBのトランザクション（TransactWriteItems）で読み取りと書き込みをアトミックに実行する",
+      "DynamoDBの条件式（ConditionExpression）で在庫数>0の場合のみ更新を実行する",
+      "SQSのFIFOキューで注文リクエストを順番に処理する",
+      "DynamoDB Streamsで在庫変更を監視してロールバックする"
+    ],
+    answer: 1,
+    explanation: "ConditionExpression（例：#stock > 0）を使用したアトミックな更新（UpdateItem）は、楽観的ロックの代わりに条件を満たさない場合に更新を失敗させます。これにより競合状態での二重引き落としを防げます。DynamoDBトランザクションも有効ですが、読み取りと書き込みを別オペレーションにすると結局競合が発生します。ConditionExpressionを使ったアトミックUpdateItemが最もシンプルで効率的です。"
+  },
+  {
+    category: "データベース",
+    question: "ElastiCache for Redisをキャッシュとして使用するアプリケーションで、Redisクラスターが利用不能になった場合もアプリケーションを継続させたいです。最も適切な実装パターンはどれですか？",
+    options: [
+      "ElastiCacheのMulti-AZとフェイルオーバーを有効にする",
+      "キャッシュ取得失敗時はデータベースに直接アクセスするフォールバックロジックをアプリケーションに実装する",
+      "ElastiCacheをクラスターモードで複数シャードに分散する",
+      "ElastiCacheのバックアップを有効にして定期的にスナップショットを取得する"
+    ],
+    answer: 1,
+    explanation: "Redisはキャッシュ層であるため、利用不能になった場合のフォールバックとして元データソース（RDSなど）に直接アクセスするサーキットブレーカーパターンが重要です。Multi-AZは可用性を高めますがフェイルオーバー中の瞬断は避けられません。アプリケーションのレジリエンスを高めるにはフォールバックロジックが不可欠です。"
+  },
+  {
+    category: "データベース",
+    question: "Amazon Neptune（グラフDB）を最も適切に活用できるユースケースはどれですか？",
+    options: [
+      "IoTデバイスからの時系列センサーデータの保存と分析",
+      "SNSの「友達の友達」推薦や不正検出のための関係性グラフ分析",
+      "Eコマースの商品カタログと在庫管理",
+      "ゲームのハイスコアランキングのリアルタイム管理"
+    ],
+    answer: 1,
+    explanation: "Amazon Neptuneはグラフデータベースで、ノードとエッジで表現される複雑な関係性のクエリに最適です。SNSの推薦（友達の友達）、不正検出（取引ネットワーク）、知識グラフなどが代表的なユースケースです。時系列データはAmazon Timestream、ランキングはDynamoDB/ElastiCacheが適切です。"
+  },
+  {
+    category: "データベース",
+    question: "RDS for MySQLでRead Replicaを作成したところ、レプリケーションラグが増加し続けています。最も一般的な原因と対処法はどれですか？",
+    options: [
+      "プライマリインスタンスの書き込みスループットがレプリカの処理能力を超えている。レプリカをより高スペックなインスタンスクラスに変更する",
+      "レプリカがマルチAZ構成でないため、レプリケーションが不安定になっている",
+      "バイナリログの保持期間が短すぎる。aws_binlog_retention_hoursを延長する",
+      "レプリカへのネットワーク帯域が不足している。VPCエンドポイントを追加する"
+    ],
+    answer: 0,
+    explanation: "レプリケーションラグの最も一般的な原因は、プライマリの書き込みワークロードがレプリカのシングルスレッドレプリケーション処理能力を超えることです。対処法としてはレプリカのインスタンスクラスアップグレード、並列レプリケーションの有効化、または大量書き込みをバッチ処理から分割することが有効です。"
+  },
+  {
+    category: "データベース",
+    question: "オンプレミスのOracleデータベース（ライセンス含む）のコストが高く、AWSへの移行を検討しています。Oracleの高度な機能（パーティション、Advanced Compression）は使用していません。最もコスト削減効果が高い移行先はどれですか？",
+    options: [
+      "Amazon RDS for Oracle（BYOL）でライセンス持ち込みで移行する",
+      "Amazon RDS for Oracle（License Included）で移行する",
+      "AWS SCTとDMSを使用してAmazon Aurora PostgreSQL互換に移行する",
+      "Amazon RDS for MySQLに移行してOracleライセンスを廃止する"
+    ],
+    answer: 2,
+    explanation: "Oracle→Aurora PostgreSQLへのヘテロジニアス移行はOracleライセンス費用（数百万円/年）を完全に排除できます。Advanced機能を使用していなければSCTでの変換負荷も比較的低くなります。RDS for Oracle（License Included）はAmazonがライセンス料を上乗せするため割高です。Oracleから脱却することが最大のコスト削減になります。"
+  },
+  {
+    category: "データベース",
+    question: "DynamoDBのオンデマンドキャパシティモードとプロビジョンドキャパシティモードで、オンデマンドが明らかに適しているケースはどれですか？",
+    options: [
+      "1日あたりのリクエスト数が安定しており予測可能なアプリケーション",
+      "新規リリースで月次トラフィックは予測できるが、時間帯による変動が大きい",
+      "アクセスパターンが全く予測できない新規サービスや、突発的なスパイクが頻発するワークロード",
+      "読み取りが多く書き込みが少ない、トラフィックパターンが明確なアプリケーション"
+    ],
+    answer: 2,
+    explanation: "オンデマンドモードはトラフィックが予測不能でスパイクが突発的に発生する場合に適しています。キャパシティの事前設定が不要でスロットリングが発生しません。一方、安定したトラフィックパターンではプロビジョンドモード（+Auto Scaling）の方が最大80%安価です。新規サービスはオンデマンドで始め、パターンが掴めたらプロビジョンドに切り替えるのがベストプラクティスです。"
+  },
+
+  // --- ネットワーク追加 (10) ---
+  {
+    category: "ネットワーク",
+    question: "VPCのフローログを解析して、特定のEC2インスタンスへの通信を拒否しているセキュリティグループのルールを特定したいです。最も効率的な方法はどれですか？",
+    options: [
+      "CloudWatch LogsにVPCフローログを送信し、REJECTedトラフィックをAthenaでクエリする",
+      "AWS Network Access Analyzer（Network Manager）でネットワーク到達性を分析する",
+      "AWS Reachability Analyzerで送信元から対象インスタンスへのパスを分析する",
+      "VPC Traffic Mirroringでパケットをキャプチャして解析する"
+    ],
+    answer: 2,
+    explanation: "AWS Reachability Analyzerは2つのエンドポイント間のネットワーク到達性を分析し、パケットを実際に送信せずにルーティング問題やセキュリティグループのブロックを特定します。通信が到達できない場合は具体的に何がブロックしているか（セキュリティグループのルール、NACLなど）を明示します。フローログ解析より迅速かつ直接的です。"
+  },
+  {
+    category: "ネットワーク",
+    question: "パブリックサブネットにALBを配置し、プライベートサブネットにEC2インスタンスを配置しています。EC2インスタンスからHTTPS通信でサードパーティAPIを呼び出す必要があります。NATゲートウェイなしで実現する方法はどれですか？",
+    options: [
+      "EC2インスタンスにElastic IPを割り当てる",
+      "VPCエンドポイント（Interface型）でサードパーティAPIに接続する",
+      "ALBを経由してEC2からインターネットにアクセスする",
+      "EC2インスタンスをパブリックサブネットに移動する"
+    ],
+    answer: 1,
+    explanation: "サードパーティAPIがAWS PrivateLinkに対応している場合はInterface VPCエンドポイントで接続可能です。対応していない場合、NATゲートウェイまたはNATインスタンスなしでプライベートサブネットからインターネットへのアウトバウンド通信は不可能です。実際にはNATゲートウェイが必要なケースがほとんどです。インスタンスをパブリックに移動するかNATゲートウェイを追加するかを選択することになります。"
+  },
+  {
+    category: "ネットワーク",
+    question: "複数のAWSアカウントのVPCを接続する共有サービス（Active Directory等）を提供したいです。トラフィックをAWSネットワーク内に留め、各アカウントへの接続を最小権限で管理したいです。最も適切な構成はどれですか？",
+    options: [
+      "各VPCとサービスVPCをTransit Gatewayで接続する",
+      "AWS PrivateLinkでサービスをエクスポーズし、各アカウントのVPCにInterface VPCエンドポイントを作成する",
+      "VPCピアリングでサービスVPCと各アカウントのVPCを接続する",
+      "AWS Resource Access Managerでサブネットを共有する"
+    ],
+    answer: 1,
+    explanation: "AWS PrivateLinkはNLBの背後にサービスを配置し、各コンシューマーVPCにInterface VPCエンドポイントを作成することで、VPC全体を公開せずにサービスのみを安全に共有できます。サービスプロバイダー側でどのアカウントへのアクセスを許可するかを制御でき、最小権限の原則に沿っています。TGWやVPCピアリングはVPC全体の疎通を許可します。"
+  },
+  {
+    category: "ネットワーク",
+    question: "ALBのアクセスログを分析して、特定のユーザーエージェントからの不審なトラフィックパターンを調査したいです。過去のログも含めて効率的にクエリする環境はどれですか？",
+    options: [
+      "CloudWatch LogsにALBログを送信してCloudWatch Insights でクエリする",
+      "ALBアクセスログをS3に保存し、Amazon AthenaでSQLクエリする",
+      "ALBアクセスログをKinesis Data Firehoseでリアルタイムに処理する",
+      "ALBのメトリクスをCloudWatch Dashboardで可視化する"
+    ],
+    answer: 1,
+    explanation: "ALBアクセスログはデフォルトでS3に保存されます。S3にあるログをAthenaでクエリするのが標準的なアプローチで、SQLで柔軟にフィルタリング・集計できます。AWSはAthena用のALBログクエリのサンプルクエリも提供しています。スキャンしたデータ量のみ課金されるためコスト効率も良いです。"
+  },
+  {
+    category: "ネットワーク",
+    question: "Route 53のヘルスチェックを使ってDNSフェイルオーバーを設定しています。プライマリサイトが障害の際にセカンダリサイトへ自動で切り替わりますが、プライマリ復旧後の自動切り戻しにかかる時間を最短にする設定はどれですか？",
+    options: [
+      "TTLを300秒に設定してキャッシュの影響を最小化する",
+      "ヘルスチェックの確認間隔を10秒、失敗しきい値を1に設定し、TTLを60秒以下にする",
+      "ヘルスチェックをCloudWatchアラームと連動させてより細かな制御を行う",
+      "レイテンシーベースルーティングに切り替えて自動的に最速のリージョンに誘導する"
+    ],
+    answer: 1,
+    explanation: "切り戻し時間はヘルスチェック間隔×しきい値+TTLで決まります。ヘルスチェックの最短間隔は10秒（高速ヘルスチェック、追加料金あり）、失敗しきい値を1にするとプライマリ復旧の確認が最速になります。TTLを短くすることでDNSキャッシュの影響も最小化できます。CloudWatchアラーム連動は設定が複雑で追加の遅延が発生します。"
+  },
+  {
+    category: "ネットワーク",
+    question: "EC2インスタンスでホストされたAPIが、インターネットからの直接アクセスとVPC内部からのアクセスの両方に対応する必要があります。VPC内部からはプライベートIPで、インターネットからはパブリックIPでアクセスできるようにしたいです。最も適切な構成はどれですか？",
+    options: [
+      "パブリックALBとプライベートALBの両方を作成して使い分ける",
+      "API Gatewayをパブリックとプライベートのデュアルエンドポイントで設定する",
+      "split-horizon DNS（Route 53のプライベートホストゾーン）で同じドメインをVPC内外で異なるIPに解決させる",
+      "EC2インスタンスにElastic IPとプライベートIPの両方を割り当て、NLBで振り分ける"
+    ],
+    answer: 2,
+    explanation: "Split-horizon DNS（スプリットDNS）はRoute 53のプライベートホストゾーンを使って、同じドメイン名をVPC内ではプライベートIPに、インターネットからはパブリックIPに解決させます。単一のインフラで内外からのアクセスを自然に実現でき、アプリケーション側の変更も不要です。"
+  },
+  {
+    category: "ネットワーク",
+    question: "AWS WAFをALBに設定しています。特定のIPアドレスレンジからのアクセスをすべてブロックし、そのIPからのリクエストをCloudWatch Logsに記録したいです。最も適切な設定はどれですか？",
+    options: [
+      "NACLでIPアドレスレンジをDenyして、VPCフローログで記録する",
+      "WAFにIPセットを作成してBlockルールを設定し、ウェブACLのロギングをCloudWatch Logsに有効化する",
+      "セキュリティグループのインバウンドルールでIPレンジを拒否する",
+      "Route 53 Resolverのファイアウォールルールでブロックする"
+    ],
+    answer: 1,
+    explanation: "WAFのIPセットで対象のIPアドレスレンジを定義し、Blockアクションのルールを作成します。WAFのロギング機能（Kinesis Firehose経由でS3、またはCloudWatch Logs）でブロックされたリクエストを記録できます。NACLやセキュリティグループはリクエストのログをCloudWatch Logsに詳細記録する機能がありません。"
+  },
+  {
+    category: "ネットワーク",
+    question: "オンプレミスからAWSへのDirect Connect接続で、プライベートVIFとパブリックVIFの違いとして正しいのはどれですか？",
+    options: [
+      "プライベートVIFはVPCのリソースにアクセスし、パブリックVIFはS3やDynamoDBなどのAWSパブリックサービスにAWSネットワーク経由でアクセスする",
+      "プライベートVIFはSSL暗号化あり、パブリックVIFはSSL暗号化なし",
+      "プライベートVIFは単一リージョン、パブリックVIFはグローバルでアクセス可能",
+      "プライベートVIFは高帯域、パブリックVIFは低帯域に適している"
+    ],
+    answer: 0,
+    explanation: "プライベートVIFはVPCのプライベートIPアドレス空間への接続（EC2等）に使用します。パブリックVIFはAWSのパブリックIPを持つサービス（S3、DynamoDB、API Gatewayなど）に、インターネットを経由せずAWSのバックボーン経由でアクセスするために使用します。両方とも暗号化はデフォルトでなく、IPSec VPNを重ねて使うことが多いです。"
+  },
+  {
+    category: "ネットワーク",
+    question: "ALBで複数のマイクロサービスをホストしています。パス /api/orders/* は注文サービス、/api/products/* は商品サービス、それ以外はデフォルトの画面サービスにルーティングしたいです。最も適切な設定はどれですか？",
+    options: [
+      "ALBのリスナールールで優先度をつけてパスベースのルーティングを設定する",
+      "Route 53の加重ルーティングでトラフィックを分散する",
+      "CloudFrontのビヘイビアでパスパターンを設定してオリジンを振り分ける",
+      "NLBとターゲットグループで各サービスを分離する"
+    ],
+    answer: 0,
+    explanation: "ALBのリスナールールはパスパターン（/api/orders/*）、ホストヘッダー、HTTPヘッダーなどの条件でターゲットグループへのルーティングを設定できます。優先度の高いルールから評価されるため、より具体的なパスを高優先度に設定します。これがALBの主要機能であり、マイクロサービスのルーティングに最適です。"
+  },
+  {
+    category: "ネットワーク",
+    question: "IPv6を使用しているクライアントからIPv4のみ対応しているバックエンドサービスにアクセスさせたいです。最も適切な構成はどれですか？",
+    options: [
+      "ALBをデュアルスタック（IPv4/IPv6）で設定し、バックエンドへの通信はIPv4で行う",
+      "VPCをIPv6対応にしてEC2インスタンスにIPv6アドレスを割り当てる",
+      "CloudFrontをIPv6対応にしてオリジンとの通信はIPv4にする",
+      "NAT64ゲートウェイを使用してIPv6をIPv4に変換する"
+    ],
+    answer: 0,
+    explanation: "ALBをデュアルスタックで設定するとIPv6クライアントからのアクセスを受け付けつつ、バックエンドのEC2インスタンス（IPv4のみ）へはIPv4で通信します。ALBがIPv6→IPv4の変換を透過的に行います。CloudFrontでも同様のことは可能ですが、ALBが最もシンプルな構成です。NAT64は別の変換方式で複雑な設定が必要です。"
+  },
+
+  // --- セキュリティ追加 (10) ---
+  {
+    category: "セキュリティ",
+    question: "AWS Organizations を使用するマルチアカウント環境で、全アカウントのルートユーザーが特定の操作（例：IAMユーザーの作成）をできないように制限したいです。最も適切な方法はどれですか？",
+    options: [
+      "各アカウントのIAMポリシーでDenyを設定する",
+      "AWS OrganizationsのSCP（サービスコントロールポリシー）でDenyを設定する",
+      "AWS Config Rulesで違反を検出してSNSで通知する",
+      "AWS Control Towerのガードレールで制限する"
+    ],
+    answer: 1,
+    explanation: "SCPはOrganizations内の全アカウント（ルートユーザーを含む）に適用できる権限の境界です。SCPでDenyを設定するとルートユーザーであっても操作が制限されます。IAMポリシーはルートユーザーには適用されません。AWS Control TowerはSCPを内部で使用しており、同等の効果がありますが、既存環境への適用には追加の手順が必要です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "AWS CloudTrailで記録されたAPIコールのログを改ざんから保護し、改ざんされていないことを検証できるようにしたいです。最も適切な設定はどれですか？",
+    options: [
+      "CloudTrailのS3バケットにS3 Object Lockを設定する",
+      "CloudTrailのログファイル検証（Log File Validation）を有効にする",
+      "CloudTrailのログをCloudWatch Logsにも送信してバックアップを取る",
+      "S3バケットのバージョニングを有効にして変更履歴を保持する"
+    ],
+    answer: 1,
+    explanation: "CloudTrailのログファイル検証を有効にすると、各ログファイルのSHA-256ダイジェストファイルが作成されます。AWS CLIの`validate-logs`コマンドを使ってログが改ざんされていないか検証できます。S3 Object Lockは削除防止に有効ですが、改ざんの検証機能はありません。ログファイル検証がCloudTrailの改ざん検知の標準機能です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "Webアプリケーションに対するOWASP Top 10の脆弱性攻撃（SQLインジェクション、XSSなど）をAWSのマネージドサービスで防御したいです。最も適切なサービスはどれですか？",
+    options: [
+      "Amazon GuardDutyでWebアプリへの脅威を検出する",
+      "AWS WAFのAWSマネージドルールグループ（AWSManagedRulesCommonRuleSet）をALBまたはCloudFrontに適用する",
+      "Amazon Inspector でWebアプリのコードをスキャンする",
+      "AWS Shield Standardで自動的にWebアプリを保護する"
+    ],
+    answer: 1,
+    explanation: "AWS WAFのAWSマネージドルールはAWSがOWASP Top 10に基づいて作成・管理するルールセットで、SQLiやXSSなどの一般的なWebアプリ攻撃を自動でブロックします。ルールの管理はAWSが行うため、署名の更新も自動です。GuardDutyはAWSアカウント全体の脅威検出、Inspectorはインフラの脆弱性スキャン、ShieldはDDoS特化です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "KMSのカスタマーマネージドキー（CMK）を使用してデータを暗号化しています。誤ってCMKを削除してしまうリスクを最小化する方法はどれですか？",
+    options: [
+      "CMKのキーポリシーで削除アクションをDenyする",
+      "CMKを削除するのではなく、キーを無効化（disable）することで実質的に使用不能にできることを理解し、削除には7〜30日の待機期間があることを利用する",
+      "CMKの自動ローテーションを有効にして古いキーを保持する",
+      "マルチリージョンキーを作成してセカンダリリージョンにバックアップを持つ"
+    ],
+    answer: 1,
+    explanation: "KMSのCMK削除には7〜30日の必須待機期間（キーイング待機）があります。この期間中はキャンセルが可能です。また削除するより「無効化」すれば新たな暗号化/復号に使えなくなりますが、キーマテリアルは保持されます。キーポリシーでkms:ScheduleKeyDeletionをDenyすることも有効な追加保護です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "EC2インスタンスのOSとソフトウェアの脆弱性を自動的にスキャンし、重大度別にレポートしたいです。最も適切なサービスはどれですか？",
+    options: [
+      "AWS Security Hubですべてのセキュリティアラートを集約する",
+      "Amazon Inspectorをアクティブ化してEC2インスタンスの脆弱性を継続的にスキャンする",
+      "AWS Configでコンプライアンスルールを設定してEC2の設定を評価する",
+      "Amazon GuardDutyのEC2保護機能を有効にする"
+    ],
+    answer: 1,
+    explanation: "Amazon Inspector v2はSSMエージェント経由でEC2インスタンスのOSパッケージとソフトウェアをCVEデータベースと照合し、脆弱性を継続的にスキャンします。重大度（Critical、High、Medium、Low）別のレポートと、CVSS スコアを提供します。Security Hubは集約ダッシュボード、GuardDutyは脅威検出、ConfigはAWS設定の監査です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "S3バケット内のデータに対してサーバーサイド暗号化を設定しています。暗号化キーの管理を完全に自社で行い、AWSがキーマテリアルにアクセスできないようにしたいです。最も適切な暗号化オプションはどれですか？",
+    options: [
+      "SSE-S3（AWSが管理するキー）を使用する",
+      "SSE-KMS（KMSのカスタマーマネージドキー）を使用する",
+      "SSE-C（顧客指定のキー）を使用する",
+      "クライアントサイド暗号化でAWS KMSのキーを使用する"
+    ],
+    answer: 2,
+    explanation: "SSE-Cでは、暗号化・復号のリクエストごとに顧客がキーをHTTPヘッダーで提供します。AWSはリクエスト処理後にキーをメモリから削除するため、キーマテリアルを保存しません。完全に自社管理が可能です。ただし、キーの紛失=データが復号不能になるリスクがあります。SSE-KMSのCMKはAWS KMSにキーマテリアルが保存されます（HSM内ですが）。"
+  },
+  {
+    category: "セキュリティ",
+    question: "本番環境のAWSアカウントで、IAMユーザーを使わず人間のオペレーターが一時的に管理作業を行う必要があります。最もセキュアな方法はどれですか？",
+    options: [
+      "共有のIAMユーザーアカウントを作成してMFAを設定する",
+      "AWS IAM Identity Center（旧AWS SSO）でIdPと連携し、一時的な認証情報でAWSコンソールとCLIにアクセスする",
+      "EC2インスタンスにIAMロールをアタッチして管理作業を行う",
+      "ルートアカウントにMFAを設定して緊急時のみ使用する"
+    ],
+    answer: 1,
+    explanation: "IAM Identity CenterはSAML 2.0対応のIdP（Okta、Azure AD等）と連携し、フェデレーション認証で一時的な認証情報を発行します。IAMユーザーが不要になり、アクセスは時間制限付きの一時認証情報で行われます。最小権限の原則、MFA、監査ログも一元管理できます。共有IAMユーザーは責任の所在が不明確になります。"
+  },
+  {
+    category: "セキュリティ",
+    question: "Lambda関数のコードにAPIキーやパスワードなどの機密情報が含まれている可能性があります。自動的にスキャンして検出したいです。最も適切なアプローチはどれですか？",
+    options: [
+      "Amazon Macieを使ってLambdaのコードをスキャンする",
+      "AWS CodeGuruのSecrets Detectorで機密情報を自動検出する",
+      "Amazon InspectorでLambda関数のコードをスキャンする",
+      "AWS Config RulesでLambda関数の設定をチェックする"
+    ],
+    answer: 1,
+    explanation: "Amazon CodeGuru Security（旧Secrets Detector）はコードリポジトリやZIPファイル内のハードコードされた機密情報（APIキー、パスワード、接続文字列など）を機械学習で検出します。また、Amazon Inspector v2はLambda関数のコードを脆弱性スキャンする機能も持っています。MacieはS3内の構造化データの機密情報検出が主用途です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "AWS Configを使って「全EC2インスタンスにSSMエージェントがインストールされ、稼働していること」を継続的に確認し、違反時に自動修復したいです。最も適切な設定はどれですか？",
+    options: [
+      "AWS Config Ruleで条件チェックし、違反時にSNSで通知する",
+      "AWS Config Ruleでec2-instance-managed-by-systems-managerルールを使用し、Systems Manager Automationで自動修復を設定する",
+      "Lambda関数でEC2インスタンスを定期的にチェックしてSSMエージェントをインストールする",
+      "AWS Security Hubでコントロールを有効にして違反を検出する"
+    ],
+    answer: 1,
+    explanation: "AWS Configには「ec2-instance-managed-by-systems-manager」マネージドルールがあり、SSM管理対象外のEC2インスタンスを検出できます。違反時の自動修復アクションとしてSystems Manager Automationドキュメントを指定することで、SSMエージェントのインストールを自動化できます。これがConfigの自動修復機能の標準的な使い方です。"
+  },
+  {
+    category: "セキュリティ",
+    question: "企業のセキュリティポリシーでS3バケットのパブリックアクセスを禁止しています。全アカウント・全リージョンで新規S3バケットのパブリックアクセスブロックが有効であることを強制したいです。最も効率的な方法はどれですか？",
+    options: [
+      "各アカウントでAWS Config Ruleを設定してパブリックアクセスブロックを検出する",
+      "AWS OrganizationsのSCPでS3のパブリックアクセス許可操作をDenyする",
+      "AWS Organizations管理アカウントからS3のアカウントレベルのパブリックアクセスブロックを組織全体に適用する",
+      "AWS Security HubのS3コントロールを有効化して違反を検出する"
+    ],
+    answer: 2,
+    explanation: "AWS OrganizationsとS3を組み合わせると、管理アカウントからコンソールまたはAPIで組織内の全アカウントのS3パブリックアクセスブロックを一括で有効化できます（組織レベルのパブリックアクセスブロック）。これにより各アカウント管理者が設定を変更しても組織レベルの設定が優先されます。SCPも有効ですが、S3のブロック設定を直接変更する方法がより確実です。"
+  },
+
+  // --- 高可用性・耐障害性追加 (10) ---
+  {
+    category: "高可用性・耐障害性",
+    question: "S3にホストされた静的Webサイトで、CloudFrontを使って配信しています。S3のリージョン全体に障害が発生した場合でもサービスを継続させたいです。最も適切なDR構成はどれですか？",
+    options: [
+      "S3のCRRで別リージョンにコンテンツをレプリケートし、CloudFrontのオリジンフェイルオーバーグループで両リージョンのS3を設定する",
+      "CloudFrontのリージョン別エッジキャッシュがフェイルオーバーを自動的に処理する",
+      "Route 53のフェイルオーバールーティングで別リージョンのS3に切り替える",
+      "両リージョンに別々のCloudFrontディストリビューションを作成してRoute 53で管理する"
+    ],
+    answer: 0,
+    explanation: "CloudFrontのオリジンフェイルオーバーグループでプライマリS3とセカンダリS3（別リージョン）を設定します。CRRでコンテンツを同期し、プライマリが5xx/404を返した際に自動的にセカンダリにフォールバックします。CloudFrontのキャッシュはリージョン障害の影響を一時的に緩和しますが、キャッシュが切れると問題になります。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "API GatewayとLambdaで構築したサーバーレスAPIで、Lambda関数の同時実行数の上限に達してスロットリングが発生しています。可用性を維持しながら問題を解決する方法はどれですか？",
+    options: [
+      "Lambda関数のリザーブド同時実行数を上限まで引き上げる",
+      "API GatewayのUsagePlanとAPI Keyでクライアントごとのリクエスト数を制限し、SQSバッファでLambdaのスロットリングを吸収する",
+      "Lambda関数のタイムアウト値を短くして同時実行を早く解放する",
+      "Lambda関数をコンテナイメージでデプロイして同時実行の制限を回避する"
+    ],
+    answer: 1,
+    explanation: "API GatewayのUsagePlanでクライアントのリクエストレートを制限し、バックエンドにSQSを挟むことでLambdaへの流量を平準化できます。Lambda関数がSQSからメッセージを取得するパターン（SQS→Lambda）では、Lambdaの同時実行数はバッチサイズとポーリング設定で制御でき、スロットリングを回避できます。アカウント全体の同時実行制限の引き上げはSAにリクエストが必要です。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "DynamoDBのグローバルテーブルを使ってマルチリージョンの可用性を実現しています。ある開発者が誤って本番テーブルのアイテムを大量に削除してしまいました。最も迅速にデータを復旧する方法はどれですか？",
+    options: [
+      "DynamoDBのPoint-in-Time Recovery（PITR）を使用して削除前の時点に復元する",
+      "別リージョンのグローバルテーブルからデータをエクスポートして復元する",
+      "AWS Backupで取得したDynamoDBのバックアップから復元する",
+      "DynamoDB Streamsのイベント記録を使ってアイテムを再構築する"
+    ],
+    answer: 0,
+    explanation: "PITRが有効な場合、DynamoDBテーブルの過去35日間の任意の時点に復元できます。ただしグローバルテーブルの削除はすべてのリージョンにレプリケートされるため、別リージョンのテーブルも同様に削除されています。PITRで削除前の時点のスナップショットから新しいテーブルに復元し、本番テーブルに再インポートするのが最速です。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "Auto Scalingグループのインスタンスが定期的にヘルスチェックに失敗して終了・再作成を繰り返しています（起動ループ）。原因調査のために一時的に問題のインスタンスを終了させずに調査する方法はどれですか？",
+    options: [
+      "Auto ScalingグループのDesired Capacityを0にして全インスタンスを停止する",
+      "インスタンスをAuto Scalingの「スタンバイ」状態にして、ヘルスチェックの対象から外す",
+      "ALBのターゲットグループからインスタンスを手動で登録解除する",
+      "Auto Scalingグループを削除してインスタンスを保護する"
+    ],
+    answer: 1,
+    explanation: "Auto Scalingのスタンバイ状態（EnterStandby）にするとインスタンスはAuto Scalingのヘルスチェック対象から外れ、終了・再作成が止まります。インスタンスはそのまま動作するのでSSHやSession Managerで接続して調査できます。調査後はExitStandbyで通常状態に戻せます。Desired Capacityを0にすると全インスタンスが終了します。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "マルチリージョンのアクティブ-アクティブ構成を採用していますが、リージョン間でデータの整合性を保つことが最大の課題です。強整合性が必要なデータの処理はどうすべきですか？",
+    options: [
+      "DynamoDB Global Tablesのマルチマスター書き込みを全データに使用する",
+      "強整合性が必要な書き込みはプライマリリージョンに集約し、読み取りは各リージョンで実施するCQRSパターンを採用する",
+      "全リージョンで書き込みを受け付け、Lambdaで最終的一貫性を解決する",
+      "Aurora Global Databaseでマルチマスター書き込みを設定する"
+    ],
+    answer: 1,
+    explanation: "真のマルチリージョンアクティブ-アクティブで強整合性を保つのはCAP定理により困難です。現実的な解としてCQRS（コマンドクエリ責務分離）パターンを採用し、書き込み（コマンド）はプライマリリージョンに集中させ、読み取り（クエリ）は各リージョンのレプリカで処理します。DynamoDB Global Tablesは結果整合性であり書き込み競合が発生します。Aurora Global Databaseはプライマリ1箇所のみ書き込み可能です。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "CloudFormationスタックのデプロイが途中で失敗し、一部のリソースが作成された状態で止まっています。デフォルトの動作と、それを変更する方法はどれですか？",
+    options: [
+      "デフォルトではデプロイを継続する。ロールバックを有効にするにはDeletionPolicyをRetainに設定する",
+      "デフォルトでは自動ロールバックする。DisableRollbackオプションを設定するとロールバックを無効化できる",
+      "デフォルトではスタック全体を削除する。PreserveSuccessfulProvisioningを設定すると成功したリソースを保持できる",
+      "デフォルトでは手動介入を待つ。Stack Policyでロールバック動作を設定する"
+    ],
+    answer: 1,
+    explanation: "CloudFormationはデプロイ失敗時にデフォルトで自動ロールバックし、作成されたリソースを削除します。DisableRollbackオプション（AWS CLIでは--disable-rollback）を使うとロールバックを無効化でき、失敗したリソースが残った状態で詳細なデバッグが可能になります。失敗後のロールバックを無効にした場合は「Continue Update Rollback」や手動での修正が必要になります。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "ECSのサービスで、デプロイ中にコンテナが起動するがすぐに終了してしまい、デプロイが完了しない問題が発生しています（デプロイループ）。原因を特定する最も効率的な方法はどれですか？",
+    options: [
+      "CloudTrailでECSのAPIコールを確認する",
+      "Amazon ECS Execを使用して実行中のコンテナに接続してデバッグする",
+      "CloudWatch Container Insightsを有効化してメトリクスを分析する",
+      "ECSタスク定義のログ設定（awslogs）でCloudWatch Logsにログを送信してエラーを確認する"
+    ],
+    answer: 3,
+    explanation: "コンテナがすぐに終了する原因はアプリケーションエラーやクラッシュであることが多く、コンテナのログを確認するのが最速です。ECSタスク定義のログドライバーにawslogsを設定してCloudWatch Logsにログを転送し、エラーメッセージを確認します。ECS Execはコンテナが動作中の場合のみ使用可能で、すぐに終了するコンテナには接続できません。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "AWS Systems Manager Patch Managerを使用してEC2インスタンスへのパッチ適用を自動化しています。パッチ適用後にインスタンスの動作確認を自動化してパッチ品質を保証したいです。最も適切な方法はどれですか？",
+    options: [
+      "パッチ適用後にCloudWatch Alarmsでインスタンスのヘルスを監視する",
+      "Patch ManagerのパッチベースラインにPre/PostInstall スクリプトを設定してテストを実行する",
+      "AWS Config RulesでパッチコンプライアンスをチェックするルールをOSパッチ後に評価する",
+      "AWS Systems Manager Automationのランブックでパッチ適用→テスト→承認/ロールバックのワークフローを定義する"
+    ],
+    answer: 3,
+    explanation: "Systems Manager Automationは複数のステップ（ランブック）を定義でき、Patch Managerによるパッチ適用→カスタムテストスクリプト実行→結果評価→承認またはロールバックというエンドツーエンドのワークフローを自動化できます。承認ゲートを挟むことも可能です。Pre/Postスクリプトは限定的な機能で複雑なワークフローには不向きです。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "RTO 15分、RPO 5分の厳しい要件を持つミッションクリティカルなデータベースシステムをAWSで設計する場合、最も適切な構成はどれですか？",
+    options: [
+      "RDS Multi-AZでスタンバイを用意し、定期的なスナップショットでRPOを確保する",
+      "Aurora Global DatabaseとRDS Proxyを組み合わせ、障害時にセカンダリリージョンを1分以内にプロモートする",
+      "RDS Read Replicaをプロモートしてプライマリとして昇格させる",
+      "DynamoDB Global TablesでRPO 0を達成する"
+    ],
+    answer: 1,
+    explanation: "Aurora Global Databaseは通常1秒未満のレプリケーションラグでRPO要件を満たし、セカンダリリージョンへのフェイルオーバーは1分程度でRTO 15分を大きく下回ります。RDS Proxyと組み合わせることで接続の再確立も最小化されます。RDS Multi-AZは同一リージョン内の障害には対応しますがリージョン障害には対応できません。DynamoDBは結果整合性のためRDBMSの代替にはなりません。"
+  },
+  {
+    category: "高可用性・耐障害性",
+    question: "Kinesis Data Streamsでデータを受信しているコンシューマーLambda関数が、シャードごとの処理遅延（イテレーターエイジ）が増加しています。最も効果的な対処法はどれですか？",
+    options: [
+      "Kinesisシャードを増加してパーティション数を増やし、Lambdaコンシューマーも自動的にスケールする",
+      "Lambdaの同時実行数を引き上げてより多くのシャードを並列処理する",
+      "Kinesis Enhanced Fan-outを有効にしてコンシューマーごとの専用スループットを確保する",
+      "SQSをKinesisとLambdaの間に挟んでバッファリングする"
+    ],
+    answer: 0,
+    explanation: "Kinesisのシャードを増加すると処理並列度が上がります。LambdaのKinesisトリガーはシャードごとに1つの並列実行を行うため、シャード数を増やすとLambdaの並列実行数も自動的に増加し、処理遅延（IteratorAgeMilliseconds）が改善されます。ただしシャードの増加にはパーティションキーの均一分散が前提です。Enhanced Fan-outは複数コンシューマーでスループットを分割しない場合に有効です。"
+  },
+
+  // --- コスト最適化追加 (10) ---
+  {
+    category: "コスト最適化",
+    question: "AWS Computeの費用を削減するため、過去3か月のEC2使用量を分析したところ、常時稼働しているm5.xlargeインスタンスが50台あることがわかりました。最もコスト削減効果が高いアクションはどれですか？",
+    options: [
+      "全インスタンスをスポットインスタンスに変更する",
+      "Savings Plans（Compute Savings Plans）を1年または3年コミットで購入する",
+      "リザーブドインスタンス（標準型、1年）を購入する",
+      "インスタンスタイプをm5.largeにダウンサイズする"
+    ],
+    answer: 1,
+    explanation: "Compute Savings Plansは特定のインスタンスタイプやリージョンに縛られず、EC2・Lambda・Fargateに幅広く適用でき、最大66%の割引を受けられます。常時稼働の50台に対してはオンデマンド比較で最大の節約になります。スポットは中断リスクがあり本番の常時稼働には不適切。リザーブドインスタンスはインスタンスタイプとリージョンが固定されるためSavings Plansより柔軟性が低いです。"
+  },
+  {
+    category: "コスト最適化",
+    question: "S3バケットのコストを分析したところ、リクエスト料金が全体の60%を占めています。小さなオブジェクト（1KB〜100KB）への高頻度なGetRequestが原因です。最もコスト効率よく解決する方法はどれですか？",
+    options: [
+      "S3 Transfer Accelerationを有効にしてリクエストを高速化する",
+      "CloudFrontをS3のオリジンとして設定してリクエストをキャッシュする",
+      "小さなオブジェクトをまとめて大きなオブジェクト（バッチ）として保存する",
+      "S3 Select で必要なデータのみ取得してリクエスト数を削減する"
+    ],
+    answer: 1,
+    explanation: "CloudFrontはS3のコンテンツをエッジにキャッシュし、同じオブジェクトへの繰り返しリクエストはS3に到達しません。高頻度アクセスの小さいオブジェクトはキャッシュヒット率が高くなり、S3のリクエスト料金を大幅に削減できます。さらにCloudFrontのデータ転送料金はS3より安価です。S3 SelectはS3オブジェクトの部分取得でリクエスト数削減には直結しません。"
+  },
+  {
+    category: "コスト最適化",
+    question: "AWS Costを分析すると、RDSのコストが高く、Aurora MySQLのio1ストレージのIOPSコストが想定より高いことがわかりました。実際のIOPS使用率は平均で最大容量の15%です。コストを最適化する方法はどれですか？",
+    options: [
+      "Aurora MySQLのストレージをio1からgp3に変更する",
+      "Aurora Serverless v2に移行してIOPSを自動スケールする",
+      "Aurora I/O最適化ストレージ構成に切り替える",
+      "Auroraの代わりにRDS for MySQLのgp3を使用する"
+    ],
+    answer: 2,
+    explanation: "Aurora I/O最適化ストレージは、I/OリクエストごとのIOPS課金がなく、月額ストレージ料金に含まれる固定料金体系です。I/Oコストがストレージ費用の25%以上を占める場合に切り替えると有利になります（設問のケースは高い）。io1はプロビジョニングIOPS課金があるため、利用率が低いとコスト効率が悪いです。Aurora I/O最適化はAurora専用の機能です。"
+  },
+  {
+    category: "コスト最適化",
+    question: "マルチアカウント環境でAWS Cost Explorer を使用してコストを分析しています。特定のプロジェクトのコストを横断的に追跡する最も効率的な方法はどれですか？",
+    options: [
+      "各AWSアカウントのコストを個別に合計して集計する",
+      "全リソースにProjectタグを付与してコストアロケーションタグを有効にし、Cost Explorerでタグでフィルタリングする",
+      "プロジェクトごとに別のAWSアカウントを作成してアカウント別に集計する",
+      "AWSのCost and Usage Report（CUR）をS3に出力してAthenaで分析する"
+    ],
+    answer: 1,
+    explanation: "コストアロケーションタグを有効にすると、タグのキーと値でCost ExplorerやCURのフィルタリングが可能になります。全リソースにProject=XXXタグを付与することでマルチアカウント・マルチサービスにまたがるプロジェクトのコストを横断的に集計できます。アカウント分離は可能ですが1アカウント=1プロジェクトに限定され柔軟性がありません。"
+  },
+  {
+    category: "コスト最適化",
+    question: "Lambda関数のコストを最適化したいです。現在、メモリを3008MB（最大）に設定しており、実行時間は平均100msです。最もコスト効率のよいメモリ設定を特定する方法はどれですか？",
+    options: [
+      "メモリを128MB（最小）に下げて実行時間の変化を監視する",
+      "AWS Lambda Power Tuningツールを使って様々なメモリ設定での実行時間とコストをベンチマークする",
+      "CloudWatchのメトリクスでメモリ使用率を確認して適切な値に設定する"      ,
+      "Compute Optimizer の推奨事項を確認してメモリを調整する"
+    ],
+    answer: 1,
+    explanation: "AWS Lambda Power Tuning（Step Functionsで動作するオープンソースツール）は複数のメモリ設定（128MB〜10GB）で関数を実際に実行し、実行時間とコスト（実行時間×メモリ量）のトレードオフを可視化します。「コスト最適」と「速度最適」のベストポイントを数値で特定できます。CloudWatchのメモリ使用率だけでは実行時間への影響が考慮されません。"
+  },
+  {
+    category: "コスト最適化",
+    question: "CloudFrontのコストを削減したいです。Cost Explorerで確認すると、データ転送コストの大部分が特定の大容量ファイル（動画）のキャッシュミスによるものです。最も効果的な対策はどれですか？",
+    options: [
+      "CloudFrontのTTLを最大値（365日）に設定する",
+      "CloudFrontのPrice Classを「Price Class 100」に変更してエッジロケーション数を絞る",
+      "大容量ファイルはCloudFrontではなくS3 Transfer Accelerationで配信する",
+      "CloudFrontのキャッシュキーとオリジンリクエストポリシーを最適化してキャッシュヒット率を向上させる"
+    ],
+    answer: 3,
+    explanation: "キャッシュミスが多い原因として、不要なクエリ文字列・ヘッダー・Cookieがキャッシュキーに含まれていることが多いです。キャッシュキーからこれらを除外し、静的コンテンツのTTLを適切に設定することでキャッシュヒット率が向上し、オリジンへのリクエスト数とデータ転送量が削減されます。TTLを単純に最大にするだけでは古いコンテンツの問題が発生します。"
+  },
+  {
+    category: "コスト最適化",
+    question: "AWS Trusted AdvisorのCost Optimizationチェックで推奨される項目として正しくないものはどれですか？",
+    options: [
+      "使用率の低いEC2インスタンスの検出",
+      "アイドル状態のRDSインスタンスの検出",
+      "未使用のElastic IPアドレスの検出",
+      "S3バケット内の個別ファイルのコスト最適化"
+    ],
+    answer: 3,
+    explanation: "Trusted AdvisorのCost Optimizationチェックは使用率の低いEC2インスタンス、アイドルRDS、未使用のElastic IP、未使用のEBSボリュームなどリソースレベルの最適化を推奨します。S3バケット内の個別ファイルのストレージクラス最適化はTrusted Advisorではなく、S3 Analytics、S3 Intelligent-Tiering、またはS3 Storage Lensが対象とします。"
+  },
+  {
+    category: "コスト最適化",
+    question: "ECSのFargateタスクのコストを削減したいです。ワークロードは中断してもやり直し可能なバッチ処理です。最もコスト削減効果が高い方法はどれですか？",
+    options: [
+      "Fargateのタスクサイズ（CPU・メモリ）を最小限に抑える",
+      "Fargate Spot を使用してオンデマンド比で最大70%割引を受ける",
+      "ECSからEKS on EC2に移行してスポットインスタンスを使用する",
+      "Savings PlansのCompute Savings Plansを購入する"
+    ],
+    answer: 1,
+    explanation: "Fargate Spotは中断可能なワークロードに対してオンデマンド価格から最大70%割引で利用できます。バッチ処理でやり直し可能なタスクはFargate Spotに最適です。Fargateは処理時間×リソース量で課金されるため、Savings Plansも有効ですが、Spotの方が割引率が高くなります。EKSへの移行は管理コストが増加します。"
+  },
+  {
+    category: "コスト最適化",
+    question: "VPCのデータ転送コストを分析したところ、AZをまたぐデータ転送が予想以上に高額です。最も根本的な解決策はどれですか？",
+    options: [
+      "CloudFrontを導入してデータ転送をキャッシュする",
+      "アーキテクチャを見直し、通信頻度の高いサービスを同一AZに配置するか、各AZに独立したサービスセットを配置する",
+      "Direct Connectを使用してAZ間のトラフィックをオフロードする",
+      "VPCエンドポイントを使用してAWS内のトラフィックをAZ間転送から除外する"
+    ],
+    answer: 1,
+    explanation: "AZ間データ転送料金（約$0.01/GB）は積み重なると高額になります。根本解決としてアーキテクチャを見直し、頻繁に通信するサービス（マイクロサービス間、アプリ-DB間）を同一AZに配置するか、各AZに独立したスタック（AZ-affinity）を配置してAZ内で閉じた通信にします。CloudFrontはインターネット向け、Direct ConnectはAZ間転送には無関係です。"
+  },
+  {
+    category: "コスト最適化",
+    question: "AWS Budgetsを使って予算管理を実装したいです。月次予算の80%に達した時点で自動的にEC2インスタンスを停止させたいです。最も適切な構成はどれですか？",
+    options: [
+      "AWS BudgetsのAlertsでSNS通知を設定し、SNSトリガーのLambda関数でEC2を停止する",
+      "AWS BudgetsのBudget Actionsで予算しきい値到達時にIAMポリシーを適用してEC2起動を禁止する",
+      "AWS Cost Anomaly DetectionでコストアノマリーをDetectしてEventBridgeからLambdaでEC2を停止する",
+      "CloudWatch Billing AlarmでEC2コストを監視してAuto Scalingでインスタンスを削減する"
+    ],
+    answer: 0,
+    explanation: "AWS BudgetsのAlert（80%しきい値）→SNS→Lambda→EC2 StopInstancesのパイプラインが最もフレキシブルな実装です。Budget Actionsも有効ですが、EC2インスタンスを直接停止するアクションより、IAMポリシーの適用（新規起動の制限）が主なユースケースです。実際にインスタンスを停止するにはLambda連携が確実です。"
   }
 ];
 
@@ -1337,7 +2263,7 @@ function showResult() {
 
   if (rate >= 80) spawnRain(rate === 100 ? 200 : 80);
 
-  // カテゴリ集計
+  // カテゴリ集計（先に計算して履歴保存に使う）
   const stats = {};
   results.forEach(r => {
     const cat = r.question.category;
@@ -1346,6 +2272,10 @@ function showResult() {
   });
 
   const entries = Object.entries(stats).sort((a,b) => a[1].ok/a[1].total - b[1].ok/b[1].total);
+
+  // 履歴保存
+  saveHistory({ score, total, rate, badge, maxStreak, stats });
+  updateStartStats();
 
   const chart = document.getElementById('chart');
   chart.innerHTML = '';
@@ -1407,6 +2337,80 @@ function showResult() {
 }
 
 function restart() { show('start-screen'); }
+
+// ============================
+// 履歴機能
+// ============================
+const HIST_KEY = 'aws-saa-history';
+
+function saveHistory({ score, total, rate, badge, maxStreak, stats }) {
+  const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+  hist.unshift({ date: new Date().toISOString(), score, total, rate, badge, maxStreak, stats });
+  if (hist.length > 50) hist.length = 50; // 最大50件
+  localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+}
+
+function getHistory() {
+  return JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+}
+
+function updateStartStats() {
+  const hist = getHistory();
+  const statsEl = document.getElementById('start-stats');
+  if (!hist.length) { statsEl.style.display = 'none'; return; }
+  statsEl.style.display = '';
+  document.getElementById('stat-attempts').textContent = hist.length;
+  const best = hist.reduce((a, b) => a.rate > b.rate ? a : b);
+  document.getElementById('stat-best').textContent = `${best.score}/${best.total}`;
+  const avg = Math.round(hist.reduce((s, h) => s + h.rate, 0) / hist.length);
+  document.getElementById('stat-avg').textContent = `${avg}%`;
+}
+
+function showHistory() {
+  const hist = getHistory();
+  const list = document.getElementById('hist-list');
+  const empty = document.getElementById('hist-empty');
+  list.innerHTML = '';
+  if (!hist.length) {
+    empty.style.display = '';
+    list.style.display = 'none';
+  } else {
+    empty.style.display = 'none';
+    list.style.display = '';
+    hist.forEach((h, i) => {
+      const color = h.rate >= 80 ? '#34d399' : h.rate >= 60 ? '#fbbf24' : '#f87171';
+      const border = h.rate >= 80 ? 'rgba(52,211,153,0.4)' : h.rate >= 60 ? 'rgba(251,191,36,0.4)' : 'rgba(248,113,113,0.4)';
+      const d = new Date(h.date);
+      const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      const el = document.createElement('div');
+      el.className = 'hist-item';
+      el.innerHTML = `
+        <div class="hist-rate-circle" style="color:${color};border-color:${border};background:${border.replace('0.4','0.08')};">
+          ${h.rate}%
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:0.95rem;font-weight:700;">${h.score} / ${h.total}</span>
+            <span style="font-size:0.68rem;color:${color};font-weight:600;">${h.badge}</span>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-dim);">${dateStr}${h.maxStreak >= 3 ? ` &nbsp;&#128293; ${h.maxStreak} streak` : ''}</div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--text-dim);font-weight:600;">#${i+1}</div>`;
+      list.appendChild(el);
+    });
+  }
+  show('history-screen');
+}
+
+function clearHistory() {
+  if (!confirm('履歴をすべて削除しますか？')) return;
+  localStorage.removeItem(HIST_KEY);
+  updateStartStats();
+  showHistory();
+}
+
+// 起動時に統計を更新
+updateStartStats();
 </script>
 </body>
 </html>
